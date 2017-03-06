@@ -167,16 +167,29 @@ def tellme(self):
     """
     Infinite loop to listen the data from the port
     """
+    inBuff = Byt()
     while self.running:
         data = self._soc.recv(self.buffer_size)
         if len(data) == 0 or not self.running:
             self.close()
             return
+        inBuff += Byt(data)
+        res = core.split_flow(inBuff)
+        if len(res) <= 1:
+            continue  # no full comm yet
         self._soc.send(core.ACK)
-        if data == '__die__':
-            self.close()
-        else:
-            self.process(data)
+        inBuff = res.pop(-1)
+        for comm in res:
+            thekey = comm[:core.KEYLENGTH]
+            # got a die key, just terminate
+            if thekey == core.DIEKEY:
+                self.close()
+            # pinging to see howzy going, just pass
+            elif thekey == core.PINGKEY:
+                pass
+            elif thekey == core.RAWKEY:
+
+                self.process(data)
 
 
 def connectme(self, oneshot):
@@ -200,12 +213,13 @@ def connectme(self, oneshot):
             ready = False
         if ready:
             if not core.getAR(self._soc):
+                core.killSock(self._soc)
                 if not self.loopConnect:
                     return False
             else:
                 self._soc.sendall(self.name)
                 if not core.getAR(self._soc):
-                    self.close()
+                    core.killSock(self._soc)
                     if not self.loopConnect:
                         return False
                 else:

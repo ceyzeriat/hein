@@ -107,33 +107,56 @@ class SocTransmitter(object):
         except:
             return
         receiver.sendall(txt)
-        if not core.getAR(receiver:
+        if not core.getAR(receiver):
             del self.receivers[name]
+
+    def _tell(self, txt, key):
+        """
+        Does the real preparation and sending of the message
+        """
+        if not self.running:
+            return False
+        self.sending_buffer.append(key + core.package_message(txt))
+        return True
 
     def tell_raw(self, txt):
         """
-        Broadcasts a raw message to all receivers, and consequently
-        updates the list of active receivers.
+        Broadcasts a raw-type message
 
         Args:
-        * txt (str): the message
+        * txt (Byt or str): the message
         """
-        if not self.running or len(txt) == 0:
+        if not len(txt) > 0:
             return False
-        self.sending_buffer.append(str(txt))
-        return True
+        return self._tell(Byt(txt), core.RAWKEY)
 
     def tell_dict(self, **kwargs):
-        pass
+        """
+        Broadcasts a dictionary-type message
+
+        Kwargs:
+        * the keys-values to merge into a socket-compatible string
+        """
+        if not len(kwargs) > 0:
+            return False
+        return self._tell(core.merge_socket_info(**kwargs), core.DICTKEY)
 
     def tell_report(self, **kwargs):
-        pass
+        """
+        Broadcasts a dictionary-type message
+
+        Kwargs:
+        * the keys-values to merge into a socket-compatible string
+        """
+        if not len(kwargs) > 0:
+            return False
+        return self._tell(core.merge_socket_info(**kwargs), core.REPORTKEY)
 
     def close_receivers(self):
         """
         Forces all receivers to drop listening
         """
-        self.tell(DIEKEY)
+        self._tell('', DIEKEY)
         for idx, item in enumerate(list(self.receivers)):
             core.killSock(item)
             del self.receivers[idx]
