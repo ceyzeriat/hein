@@ -74,7 +74,11 @@ def receive(sock, l=16, timeout=1.):
     """
     ready = select.select([sock], [], [], timeout)
     if ready[0]:
-        return Byt(sock.recv(int(l)))
+        try:
+            return Byt(sock.recv(int(l)))
+        except:
+            sock.close()
+            return None
     else:
         return None
 

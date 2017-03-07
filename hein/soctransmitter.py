@@ -30,6 +30,7 @@ from threading import Thread
 import select
 import time
 from byt import Byt
+from multiprocessing import Manager
 
 from . import core
 
@@ -57,7 +58,9 @@ class SocTransmitter(object):
         self.portname = str(portname)[:15]
         self._nreceivermax = max(1, min(5, int(nreceivermax)))
         self.receivers = {}
+        self._ping = Manager().Queue(maxsize=0)
         self.sending_buffer = []
+        self.last_sent = 0.
         if start:
             self.start()
 
@@ -102,13 +105,11 @@ class SocTransmitter(object):
         return
 
     def _tell_receiver(self, name, txt):
-        try:
-            self.receivers[name].getpeername()
-        except:
-            return
         self.receivers[name].sendall(txt)
         if not core.getAR(self.receivers[name]):
             del self.receivers[name]
+            return False
+        return True
 
     def _tell(self, txt, key):
         """
@@ -116,7 +117,8 @@ class SocTransmitter(object):
         """
         if not self.running:
             return False
-        self.sending_buffer.append(key + core.package_message(txt))
+        self.sending_buffer.append((key + core.package_message(txt),
+                                    key == core.PINGKEY))
         return True
 
     def tell_raw(self, txt):
@@ -154,9 +156,13 @@ class SocTransmitter(object):
 
     def ping(self):
         """
-        Pings all receivers to check their health
+        Pings all receivers to check their health, updates the
+        receivers list and returns the result
         """
-        return self._tell('', core.PINGKEY)
+        self._tell(Byt(), core.PINGKEY)
+        ping_res = self._ping.get()
+        self._ping.task_done()
+        return ping_res
 
     def close_receivers(self):
         """
@@ -207,16 +213,25 @@ def send_buffer(self):
     """
     while self.running:
         # make a list-copy
-        for line in list(self.sending_buffer):
+        lines_to_send = list(self.sending_buffer)
+        if len(lines_to_send) == 0:
+            time.sleep(0.0001)
+            continue
+        for line, typ in lines_to_send:
             # make a list-copy
+            ping_res = {}
             for name, receiver in list(self.receivers.items()):
-                self._tell_receiver(name, line)
+                ping_res[name] = self._tell_receiver(name, line)
+            if typ:
+                self._ping.put(ping_res)
             del self.sending_buffer[0]
             time.sleep(1./core.SENDBUFFERFREQ)
             # process might have died in between
             if time is None:
                 break
-        time.sleep(0.0001)
+        else:
+            self.last_sent = time.time()
+            continue
         # process might have died in between
         if time is None:
             break

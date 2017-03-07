@@ -207,6 +207,8 @@ def connectme(self, oneshot):
     while self.loopConnect or oneshot:
         oneshot = False
         if self.connected:
+            if time is None:
+                break
             time.sleep(self._connectWait)
             continue
         if self._soc is None:
