@@ -36,7 +36,7 @@ try:
 except:
     __doc__ = ""
 
-from .core import *
+
 from .soctransmitter import *
 from .socreceiver import *
 from ._version import __version__, __major__, __minor__, __micro__

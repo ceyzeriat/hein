@@ -26,6 +26,7 @@
 
 
 import socket
+import select
 from byt import Byt
 
 
@@ -33,19 +34,33 @@ from byt import Byt
 ACK = Byt('\xaa')
 
 
+# escape character
 ESCAPE = Byt('\xee')
+# split character for dictionaries between items
 DICTSEPARATOR = Byt('\xac\xbd')
 ESCAPEDDICTSEPARATOR = DICTSEPARATOR + ESCAPE
+# end character of a communication
 MESSAGEEND = Byt('\xac\x96')
 ESCAPEDMESSAGEEND = MESSAGEEND + ESCAPE
-DICTMAPPER = Byt(':')  # must a char that cannot be in a dict key
+# split character between key and value of a dictionary item
+# must a character that cannot be in a dict key
+DICTMAPPER = Byt(':')
 
+# length of pre-pending keys - all must have the same length
 KEYLENGTH = 7
+# send this to kill a receiver
 DIEKEY = Byt('__die__')
+# send this to ping and test the health of a receiver
 PINGKEY = Byt('__png__')
+# send this followed with a report-type message
 REPORTKEY = Byt('__rpt__')
+# send this followed with a raw-type message
 RAWKEY = Byt('__raw__')
+# send this followed with a dictionary-type message
 DICTKEY = Byt('__dic__')
+
+# sending frequency in Hz
+SENDBUFFERFREQ = 50
 
 
 def receive(sock, l=16, timeout=1.):
@@ -64,7 +79,7 @@ def receive(sock, l=16, timeout=1.):
         return None
 
 
-def getAR(sock, timeout=0.1):
+def getAR(sock, timeout=1):
     """
     Checks for the acknowledgement on a socket
 
@@ -72,7 +87,7 @@ def getAR(sock, timeout=0.1):
     * sock (socket): the sock to listen to
     * timeout (float): the timeout in seconds
     """
-    return receive(sock, l=len(core.ACK), timeout=timeout) == core.ACK
+    return receive(sock, l=len(ACK), timeout=timeout) == ACK
 
 
 def killSock(sock):
@@ -105,14 +120,18 @@ def merge_socket_info(**kwargs):
 
 def package_message(txt):
     """
-    Escapes the message end flag in txt and adds it at the end
+    Packages the message by adding the end character and escaping
+
+    Args:
+    * txt (Byt): the message to escape
     """
     return txt.replace(MESSAGEEND, ESCAPEDMESSAGEEND) + MESSAGEEND*2
 
 
 def split_flow(data, n=-1):
     """
-    Splits messages from flow
+    Splits messages from flow and recovers escaped chars for all
+    but the last one, being the remainder of the split operation
 
     Args:
     * data (Byt): the data flow to split
@@ -128,53 +147,19 @@ def split_flow(data, n=-1):
             + res[-1:]
 
 
-def split_socket_info(data, asStr=False):
+def split_socket_info(data):
     """
-    Splits the data using the socket separator and returns a dictionary
-    of the different pieces in bytes format
+    Splits the data using the dictionary separator and returns a
+    dictionary
 
     Args:
     * data (Byt): the data to split
-    * asStr (bool): whether the dictionary-value should be returned as
-        string, or Byt.
     """
     dic = {}
     for item in data.split(DICTSEPARATOR*2):
+        if len(item) == 0:
+            continue
         k, v = item.replace(ESCAPEDDICTSEPARATOR, DICTSEPARATOR)\
                    .split(DICTMAPPER, 1)
-        dic[str(k)] = str(v) if asStr else v
+        dic[str(k)] = v
     return dic
-
-
-def is_reporting(data):
-    """
-    Tells if the data is of reporting format
-
-    Args:
-    * data (Byt): the text to evaluate
-    """
-    socksep = DICTSEPARATOR * 2
-    lsep = len(socksep)
-    PROOF = Byt(REPORTKEY) + DICTMAPPER + Byt(1)
-    # only and just reporting flag
-    if data == PROOF:
-        return True
-    # start with report flag
-    elif data[:len(PROOF)+lsep] == PROOF + socksep:
-        return True
-    return False
-
-
-
-
-
-
-def merge_reporting(**kwargs):
-    """
-    Merges the data using the socket separator and returns a string
-    """
-    # remove the reporting key in case it is in the dictionary to merge
-    del kwargs[REPORTKEY]
-    res = merge_socket_info(**kwargs)
-    # prepend the reporting key
-    return Byt(REPORTKEY) + DICTMAPPER + Byt(1) + DICTSEPARATOR*2 + res

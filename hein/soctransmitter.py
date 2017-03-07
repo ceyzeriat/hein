@@ -101,13 +101,13 @@ class SocTransmitter(object):
     def nreceivers(self, value):
         return
 
-    def _tell_receiver(self, name, receiver, txt):
+    def _tell_receiver(self, name, txt):
         try:
-            receiver.getpeername()
+            self.receivers[name].getpeername()
         except:
             return
-        receiver.sendall(txt)
-        if not core.getAR(receiver):
+        self.receivers[name].sendall(txt)
+        if not core.getAR(self.receivers[name]):
             del self.receivers[name]
 
     def _tell(self, txt, key):
@@ -152,14 +152,20 @@ class SocTransmitter(object):
             return False
         return self._tell(core.merge_socket_info(**kwargs), core.REPORTKEY)
 
+    def ping(self):
+        """
+        Pings all receivers to check their health
+        """
+        return self._tell('', core.PINGKEY)
+
     def close_receivers(self):
         """
         Forces all receivers to drop listening
         """
-        self._tell('', DIEKEY)
-        for idx, item in enumerate(list(self.receivers)):
-            core.killSock(item)
-            del self.receivers[idx]
+        self._tell('', core.DIEKEY)
+        for k, v in list(self.receivers.items()):
+            core.killSock(v)
+            del self.receivers[k]
 
     def close(self):
         """
@@ -204,13 +210,13 @@ def send_buffer(self):
         for line in list(self.sending_buffer):
             # make a list-copy
             for name, receiver in list(self.receivers.items()):
-                self._tell_receiver(name, receiver, line)
+                self._tell_receiver(name, line)
             del self.sending_buffer[0]
-            time.sleep(0.03)
+            time.sleep(1./core.SENDBUFFERFREQ)
             # process might have died in between
             if time is None:
                 break
-        time.sleep(0.001)
+        time.sleep(0.0001)
         # process might have died in between
         if time is None:
             break
@@ -243,6 +249,7 @@ def accept_receivers(self):
         receiver.send(core.ACK)
         name = core.receive(receiver, l=15, timeout=5.)
         if name is not None:
+            name = str(name)
             if name in self.receivers:  # replace old connection
                 # close broken socket
                 core.killSock(self.receivers[name])

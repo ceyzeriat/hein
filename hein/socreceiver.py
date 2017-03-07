@@ -150,11 +150,11 @@ class SocReceiver(object):
         core.killSock(self._soc)
         self._soc = None
 
-    def process(self, data):
+    def process(self, typ, data):
         """
         Replace this function with proper data processing
         """
-        print(data)
+        print("{}: {}".format(typ, data))
 
     def _newconnection(self):
         """
@@ -169,16 +169,18 @@ def tellme(self):
     """
     inBuff = Byt()
     while self.running:
-        data = self._soc.recv(self.buffer_size)
+        data = core.receive(self._soc, self.buffer_size, 1.)
+        if data is None:
+            continue
         if len(data) == 0 or not self.running:
             self.close()
-            return
-        inBuff += Byt(data)
-        res = core.split_flow(inBuff)
+            break
+        inBuff += data
+        res = core.split_flow(inBuff, -1)
         if len(res) <= 1:
             continue  # no full comm yet
         self._soc.send(core.ACK)
-        inBuff = res.pop(-1)
+        inBuff = res.pop(-1)  # the remainder
         for comm in res:
             thekey = comm[:core.KEYLENGTH]
             # got a die key, just terminate
@@ -188,8 +190,14 @@ def tellme(self):
             elif thekey == core.PINGKEY:
                 pass
             elif thekey == core.RAWKEY:
-
-                self.process(data)
+                self.process('raw',
+                             comm[core.KEYLENGTH:])
+            elif thekey == core.DICTKEY:
+                self.process('dic',
+                             core.split_socket_info(comm[core.KEYLENGTH:]))
+            elif thekey == core.REPORTKEY:
+                self.process('rpt',
+                             core.split_socket_info(comm[core.KEYLENGTH:]))
 
 
 def connectme(self, oneshot):
