@@ -9,7 +9,7 @@ if "upl" in argv[1:]:
     os.system("python setup.py sdist upload -r pypi")
     exit()
 
-m = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "joystick", "_version.py")).read()
+m = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "hein", "_version.py")).read()
 version = re.findall(r"__version__ *= *\"(.*?)\"", m)[0]
 
 try:
