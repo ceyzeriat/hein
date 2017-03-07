@@ -46,16 +46,16 @@ class SocReceiver(object):
         it will try to reconnect periodically.
 
         Args:
-        * port (int): the communication port
-        * name (str[15]): the name of the receiver, for identification
-          purposes
-        * buffer_size (int): the size in octet of each listening
-        * connect (bool): whether to start the connection loop
-          at initialization. If ``False``, use ``connect`` method.
-        * connectWait (float >0.1): the duration in second between two
-          successive connection attempts
-        * portname (str[15]): the name of the communicating port, for
-          identification purposes
+          * port (int): the communication port
+          * name (str[15]): the name of the receiver, for identification
+            purposes
+          * buffer_size (int): the size in octet of each listening
+          * connect (bool): whether to start the connection loop
+            at initialization. If ``False``, use ``connect`` method.
+          * connectWait (float >0.1): the duration in second between two
+            successive connection attempts
+          * portname (str[15]): the name of the communicating port, for
+            identification purposes
         """
         self.buffer_size = int(buffer_size)
         self._soc = None

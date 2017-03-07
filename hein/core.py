@@ -68,9 +68,9 @@ def receive(sock, l=16, timeout=1.):
     Listens to a socket and returns a chain of bytes, or ``None``
 
     Args:
-    * sock (socket): the sock to listen to
-    * l (int): the length of the message to read
-    * timeout (float): the timetout
+      * sock (socket): the sock to listen to
+      * l (int): the length of the message to read
+      * timeout (float): the timetout
     """
     ready = select.select([sock], [], [], timeout)
     if ready[0]:
@@ -88,8 +88,8 @@ def getAR(sock, timeout=1):
     Checks for the acknowledgement on a socket
 
     Args:
-    * sock (socket): the sock to listen to
-    * timeout (float): the timeout in seconds
+      * sock (socket): the sock to listen to
+      * timeout (float): the timeout in seconds
     """
     return receive(sock, l=len(ACK), timeout=timeout) == ACK
 
@@ -99,7 +99,7 @@ def killSock(sock):
     Shuts down and closes a socket
 
     Args:
-    * sock (socket): the sock to kill
+      * sock (socket): the sock to kill
     """
     sock.shutdown(socket.SHUT_RDWR)
     sock.close()
@@ -110,7 +110,7 @@ def merge_socket_info(**kwargs):
     Merges the data using the socket separator and returns a string
 
     Kwargs:
-    * the keys-values to merge into a socket-compatible string
+      * the keys-values to merge into a socket-compatible string
     """
     ret = Byt()
     for k, v in kwargs.items():
@@ -127,7 +127,7 @@ def package_message(txt):
     Packages the message by adding the end character and escaping
 
     Args:
-    * txt (Byt): the message to escape
+      * txt (Byt): the message to escape
     """
     return txt.replace(MESSAGEEND, ESCAPEDMESSAGEEND) + MESSAGEEND*2
 
@@ -138,8 +138,8 @@ def split_flow(data, n=-1):
     but the last one, being the remainder of the split operation
 
     Args:
-    * data (Byt): the data flow to split
-    * n (int): how many packets should be splited, at maximum,
+      * data (Byt): the data flow to split
+      * n (int): how many packets should be splited, at maximum,
         set to -1 for all
     """
     res = data.split(MESSAGEEND*2, int(n))
@@ -157,7 +157,7 @@ def split_socket_info(data):
     dictionary
 
     Args:
-    * data (Byt): the data to split
+      * data (Byt): the data to split
     """
     dic = {}
     for item in data.split(DICTSEPARATOR*2):

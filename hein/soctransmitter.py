@@ -45,13 +45,13 @@ class SocTransmitter(object):
         can listen.
 
         Args:
-        * port (int): the communication port
-        * nreceivermax (int): the maximum amount of receivers that can
-          listen. From 1 to 5.
-        * start (bool): whether to start the broadcasting at
-          initialization or not. If not, use ``start`` method
-        * portname (str[15]): the name of the communicating port, for
-          identification purposes
+          * port (int): the communication port
+          * nreceivermax (int): the maximum amount of receivers that can
+            listen. From 1 to 5.
+          * start (bool): whether to start the broadcasting at
+            initialization or not. If not, use ``start`` method
+          * portname (str[15]): the name of the communicating port, for
+            identification purposes
         """
         self._running = False
         self.port = int(port)
@@ -126,7 +126,7 @@ class SocTransmitter(object):
         Broadcasts a raw-type message
 
         Args:
-        * txt (Byt or str): the message
+          * txt (Byt or str): the message
         """
         if not len(txt) > 0:
             return False
@@ -137,7 +137,7 @@ class SocTransmitter(object):
         Broadcasts a dictionary-type message
 
         Kwargs:
-        * the keys-values to merge into a socket-compatible string
+          * the keys-values to merge into a socket-compatible string
         """
         if not len(kwargs) > 0:
             return False
@@ -148,7 +148,7 @@ class SocTransmitter(object):
         Broadcasts a dictionary-type message
 
         Kwargs:
-        * the keys-values to merge into a socket-compatible string
+          * the keys-values to merge into a socket-compatible string
         """
         if not len(kwargs) > 0:
             return False
