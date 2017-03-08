@@ -172,14 +172,24 @@ def tellme(self):
         data = core.receive(self._soc, self.buffer_size, 1.)
         if data is None:
             continue
-        if len(data) == 0 or not self.running:
+        if not self.running:
             self.close()
             break
+        if len(data) == 0:
+            # maybe the socket died, let's give it a chance
+            try:
+                self.close()
+            except:
+                pass
         inBuff += data
         res = core.split_flow(inBuff, -1)
         if len(res) <= 1:
             continue  # no full comm yet
-        self._soc.send(core.ACK)
+        try:
+            self._soc.send(core.ACK)
+        except:  # socket died for good
+            self._soc.close()
+            break
         inBuff = res.pop(-1)  # the remainder
         for comm in res:
             thekey = comm[:core.KEYLENGTH]
@@ -198,6 +208,7 @@ def tellme(self):
             elif thekey == core.REPORTKEY:
                 self.process('rpt',
                              core.split_socket_info(comm[core.KEYLENGTH:]))
+    self._running = False
 
 
 def connectme(self, oneshot):

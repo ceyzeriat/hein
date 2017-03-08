@@ -60,7 +60,7 @@ RAWKEY = Byt('__raw__')
 DICTKEY = Byt('__dic__')
 
 # sending frequency in Hz
-SENDBUFFERFREQ = 50
+SENDBUFFERFREQ = 100
 
 
 def receive(sock, l=16, timeout=1.):

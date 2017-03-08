@@ -216,25 +216,50 @@ def send_buffer(self):
         lines_to_send = list(self.sending_buffer)
         if len(lines_to_send) == 0:
             time.sleep(0.0001)
+            # process might have died in between
+            if time is None:
+                break
             continue
-        for line, typ in lines_to_send:
+        # too many lines to send.. gotta merge some to keep up
+        elif len(lines_to_send) >= 0.85*core.SENDBUFFERFREQ:
+            # average amount of lines to be merged
+            avg_join = int(len(lines_to_send) / (0.85 * core.SENDBUFFERFREQ))
+            # make init copy
+            new_lines_to_send = [list(lines_to_send[0] + (1,))]
+            # loop to merge
+            for line, ping in lines_to_send[1:]:
+                # if not ping and not previously ping and below average merge
+                if not (ping or new_lines_to_send[-1][1]\
+                        or new_lines_to_send[-1][2] > avg_join):
+                    new_lines_to_send[-1][0] += line
+                    new_lines_to_send[-1][2] += 1
+                else:  # just add new line
+                    new_lines_to_send.append([line, ping, 1])
+            # copy it back
+            lines_to_send = new_lines_to_send
+        # iterate on lines
+        for item in lines_to_send:
+            # merged lines have a thrid argument, default 1
+            line, ping, cnt = (list(item) + [1])[:3]
+            t = time.time()
             # make a list-copy
             ping_res = {}
             for name, receiver in list(self.receivers.items()):
                 ping_res[name] = self._tell_receiver(name, line)
-            if typ:
+            if ping:
                 self._ping.put(ping_res)
-            del self.sending_buffer[0]
-            time.sleep(1./core.SENDBUFFERFREQ)
-            # process might have died in between
-            if time is None:
-                break
+            # remove lines, possibly several if merged
+            for i in range(cnt):
+                del self.sending_buffer[0]
+            # wait for the right time to go on
+            while time.time()-t < 0.99 / core.SENDBUFFERFREQ:
+                time.sleep(0.1/core.SENDBUFFERFREQ)
+                # process might have died in between
+                if time is None:
+                    break
         else:
             self.last_sent = time.time()
             continue
-        # process might have died in between
-        if time is None:
-            break
 
 
 def accept_receivers(self):
