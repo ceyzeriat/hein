@@ -39,21 +39,25 @@ __all__ = ['SocTransmitter']
 
 
 class SocTransmitter(object):
-    def __init__(self, port, nreceivermax, start=True, portname=""):
+    def __init__(self, port, nreceivermax, start=True, portname="",
+                 timeoutACK=1.):
         """
         Creates a transmitting socket to which receiving socket
         can listen.
 
         Args:
-          * port (int): the communication port
+          * port (int): the communication socket-port
           * nreceivermax (int): the maximum amount of receivers that can
             listen. From 1 to 5.
           * start (bool): whether to start the broadcasting at
             initialization or not. If not, use ``start`` method
           * portname (str[15]): the name of the communicating port, for
             identification purposes
+          * timeoutACK (float): the timeout duration in seconds to wait for
+            the acknowledgement receipt, or ``None`` to disable it
         """
         self._running = False
+        self.timeoutACK = None if timeoutACK is None else float(timeoutACK)
         self.port = int(port)
         self.portname = str(portname)[:15]
         self._nreceivermax = max(1, min(5, int(nreceivermax)))
@@ -104,9 +108,16 @@ class SocTransmitter(object):
     def nreceivers(self, value):
         return
 
-    def _tell_receiver(self, name, txt):
+    def _tell_receiver(self, name, txt, ping=False):
         self.receivers[name].sendall(txt)
-        if not core.getAR(self.receivers[name]):
+        # no ACK mode
+        if self.timeoutACK is None:
+            if ping:
+                # requested a ping, so give a bool anyway
+                return core.getAR(self.receivers[name], timeout=1.)
+            else:
+                return None
+        elif not core.getAR(self.receivers[name], timeout=self.timeoutACK):
             del self.receivers[name]
             return False
         return True
@@ -245,7 +256,7 @@ def send_buffer(self):
             # make a list-copy
             ping_res = {}
             for name, receiver in list(self.receivers.items()):
-                ping_res[name] = self._tell_receiver(name, line)
+                ping_res[name] = self._tell_receiver(name, line, ping)
             if ping:
                 self._ping.put(ping_res)
             # remove lines, possibly several if merged

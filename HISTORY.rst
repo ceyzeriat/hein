@@ -1,3 +1,9 @@
+0.1.2 (2017-03-22)
+++++++++++++++++++
+
+- Made timeout parameter of acknowledgement of receipt accessible
+
+
 0.1.1 (2017-03-09)
 ++++++++++++++++++
 
