@@ -238,7 +238,7 @@ def connectme(self, oneshot):
                 if not self.loopConnect:
                     return False
             else:
-                self._soc.sendall(self.name)
+                self._soc.sendall(Byt(self.name))
                 if not core.getAR(self._soc):
                     core.killSock(self._soc)
                     if not self.loopConnect:
