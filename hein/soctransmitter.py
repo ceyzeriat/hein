@@ -154,6 +154,21 @@ class SocTransmitter(object):
             return False
         return self._tell(core.merge_socket_info(**kwargs), core.DICTKEY)
 
+    def tell_key(self, key, **kwargs):
+        """
+        Broadcasts a dictionary-type message using key provided
+
+        Args:
+          * key (str[3]): the key
+        Kwargs:
+          * the keys-values to merge into a socket-compatible string
+        """
+        if not len(kwargs) > 0:
+            return False
+        return self._tell(core.merge_socket_info(**kwargs),
+                          core.KEYPADDING + Byt(key)[:core.TINYKEYLENGTH]\
+                            + core.KEYPADDING)
+
     def tell_report(self, **kwargs):
         """
         Broadcasts a dictionary-type message
@@ -253,8 +268,9 @@ def send_buffer(self):
             # merged lines have a thrid argument, default 1
             line, ping, cnt = (list(item) + [1])[:3]
             t = time.time()
-            # make a list-copy
+            # in case of ping, init
             ping_res = {}
+            # make a list-copy
             for name, receiver in list(self.receivers.items()):
                 ping_res[name] = self._tell_receiver(name, line, ping)
             if ping:

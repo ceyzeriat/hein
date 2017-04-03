@@ -1,3 +1,10 @@
+0.1.4 (2017-04-03)
+++++++++++++++++++
+
+- added hostname to SocReceiver
+- added tell_key method to SocTransmitter to send any key-type of dictionary
+
+
 0.1.2 (2017-03-22)
 ++++++++++++++++++
 

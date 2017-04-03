@@ -47,17 +47,19 @@ ESCAPEDMESSAGEEND = MESSAGEEND + ESCAPE
 DICTMAPPER = Byt(':')
 
 # length of pre-pending keys - all must have the same length
-KEYLENGTH = 7
+KEYPADDING = Byt('__')
+TINYKEYLENGTH = 3
+KEYLENGTH = TINYKEYLENGTH + 2*len(KEYPADDING)
 # send this to kill a receiver
-DIEKEY = Byt('__die__')
+DIEKEY = KEYPADDING + Byt('die') + KEYPADDING
 # send this to ping and test the health of a receiver
-PINGKEY = Byt('__png__')
+PINGKEY = KEYPADDING + Byt('png') + KEYPADDING
 # send this followed with a report-type message
-REPORTKEY = Byt('__rpt__')
+REPORTKEY = KEYPADDING + Byt('rpt') + KEYPADDING
 # send this followed with a raw-type message
-RAWKEY = Byt('__raw__')
+RAWKEY = KEYPADDING + Byt('raw') + KEYPADDING
 # send this followed with a dictionary-type message
-DICTKEY = Byt('__dic__')
+DICTKEY = KEYPADDING + Byt('dic') + KEYPADDING
 
 # sending frequency in Hz
 SENDBUFFERFREQ = 100

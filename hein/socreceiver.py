@@ -39,7 +39,7 @@ __all__ = ['SocReceiver']
 
 class SocReceiver(object):
     def __init__(self, port, name, buffer_size=1024, connect=True,
-                    connectWait=0.5, portname=""):
+                    connectWait=0.5, portname="", hostname=None):
         """
         Connects to a transmitting port in order to listen for
         any communication from it. In case the communication drops
@@ -56,6 +56,8 @@ class SocReceiver(object):
             successive connection attempts
           * portname (str[15]): the name of the communicating port, for
             identification purposes
+          * hostname (str): the name of the host to connect to, default
+            is given by ``socket.gethostbyname``
         """
         self.buffer_size = int(buffer_size)
         self._soc = None
@@ -65,7 +67,10 @@ class SocReceiver(object):
         self.name = str(name)[:15]
         self.portname = str(portname)[:15]
         self._running = False
-        self.host = socket.gethostbyname(socket.gethostname())
+        if hostname is None:
+            self.host = socket.gethostbyname(socket.gethostname())
+        else:
+            self.host = str(hostname)
         self.port = int(port)
         self._connectWait = max(0.1, float(connectWait))
         self.connect(oneshot=True)
@@ -207,6 +212,10 @@ def tellme(self):
                              core.split_socket_info(comm[core.KEYLENGTH:]))
             elif thekey == core.REPORTKEY:
                 self.process('rpt',
+                             core.split_socket_info(comm[core.KEYLENGTH:]))
+            else:
+                self.process(thekey[len(core.KEYPADDING):
+                                    len(core.KEYPADDING)+core.TINYKEYLENGTH],
                              core.split_socket_info(comm[core.KEYLENGTH:]))
     self._running = False
 
