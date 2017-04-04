@@ -1,14 +1,20 @@
+0.1.6 (2017-04-04)
+++++++++++++++++++
+
+- Implemented connect parameter in SocReceiver
+
+
 0.1.5 (2017-04-04)
 ++++++++++++++++++
 
-- fixed bug on key being compared to instance Byt
+- Fixed bug on key being compared to instance Byt
 
 
 0.1.4 (2017-04-03)
 ++++++++++++++++++
 
-- added hostname to SocReceiver
-- added tell_key method to SocTransmitter to send any key-type of dictionary
+- Added hostname to SocReceiver
+- Added tell_key method to SocTransmitter to send any key-type of dictionary
 
 
 0.1.2 (2017-03-22)

@@ -59,7 +59,7 @@ class SocReceiver(object):
           * hostname (str): the name of the host to connect to, default
             is given by ``socket.gethostbyname``
         """
-        self.buffer_size = int(buffer_size)
+        self.buffer_size = max(1, int(buffer_size))
         self._soc = None
         self._loopConnect = False
         self._connected = False
@@ -73,7 +73,8 @@ class SocReceiver(object):
             self.host = str(hostname)
         self.port = int(port)
         self._connectWait = max(0.1, float(connectWait))
-        self.connect(oneshot=True)
+        if connect:
+            self.connect()
 
     def __str__(self):
         return "Socket receiver on port {:d} ({})".format(
@@ -105,14 +106,14 @@ class SocReceiver(object):
     def loopConnect(self, value):
         pass
 
-    def connect(self, oneshot=False):
+    def connect(self):
         """
         If not already connected, starts the connection loop
         """
         if self.loopConnect:
             return
         self._loopConnect = True
-        loopy = Thread(target=connectme, args=(self, oneshot))
+        loopy = Thread(target=connectme, args=(self, ))
         loopy.daemon = True
         loopy.start()
 
@@ -220,12 +221,11 @@ def tellme(self):
     self._running = False
 
 
-def connectme(self, oneshot):
+def connectme(self):
     """
     Infinite loop to listen the data from the port
     """
-    while self.loopConnect or oneshot:
-        oneshot = False
+    while self.loopConnect:
         if self.connected:
             if time is None:
                 break
