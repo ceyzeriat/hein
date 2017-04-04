@@ -214,8 +214,8 @@ def tellme(self):
                 self.process('rpt',
                              core.split_socket_info(comm[core.KEYLENGTH:]))
             else:
-                self.process(thekey[len(core.KEYPADDING):
-                                    len(core.KEYPADDING)+core.TINYKEYLENGTH],
+                self.process(str(thekey[len(core.KEYPADDING):
+                                    len(core.KEYPADDING)+core.TINYKEYLENGTH]),
                              core.split_socket_info(comm[core.KEYLENGTH:]))
     self._running = False
 

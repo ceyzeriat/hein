@@ -159,15 +159,15 @@ class SocTransmitter(object):
         Broadcasts a dictionary-type message using key provided
 
         Args:
-          * key (str[3]): the key
+          * key (str[3]): the key of size 3
         Kwargs:
           * the keys-values to merge into a socket-compatible string
         """
-        if not len(kwargs) > 0:
+        key = Byt(key)[:core.TINYKEYLENGTH]
+        if not len(kwargs) > 0 or len(key) != 3:
             return False
         return self._tell(core.merge_socket_info(**kwargs),
-                          core.KEYPADDING + Byt(key)[:core.TINYKEYLENGTH]\
-                            + core.KEYPADDING)
+                          core.KEYPADDING + key + core.KEYPADDING)
 
     def tell_report(self, **kwargs):
         """
