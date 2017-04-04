@@ -1,3 +1,9 @@
+0.1.5 (2017-04-04)
+++++++++++++++++++
+
+- fixed bug on key being compared to instance Byt
+
+
 0.1.4 (2017-04-03)
 ++++++++++++++++++
 
