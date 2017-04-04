@@ -154,7 +154,7 @@ class SocTransmitter(object):
             return False
         return self._tell(core.merge_socket_info(**kwargs), core.DICTKEY)
 
-    def tell_key(self, key, **kwargs):
+    def tell_key(self, _the_key, **kwargs):
         """
         Broadcasts a dictionary-type message using key provided
 
@@ -163,7 +163,7 @@ class SocTransmitter(object):
         Kwargs:
           * the keys-values to merge into a socket-compatible string
         """
-        key = Byt(key)[:core.TINYKEYLENGTH]
+        key = Byt(_the_key)[:core.TINYKEYLENGTH]
         if not len(kwargs) > 0 or len(key) != 3:
             return False
         return self._tell(core.merge_socket_info(**kwargs),

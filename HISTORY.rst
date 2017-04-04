@@ -1,13 +1,9 @@
-0.1.6 (2017-04-04)
+0.1.7 (2017-04-04)
 ++++++++++++++++++
 
 - Implemented connect parameter in SocReceiver
-
-
-0.1.5 (2017-04-04)
-++++++++++++++++++
-
 - Fixed bug on key being compared to instance Byt
+- Fixed bug with 'key' keyword in tell_key
 
 
 0.1.4 (2017-04-03)
