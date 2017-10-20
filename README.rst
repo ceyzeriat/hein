@@ -59,12 +59,23 @@ Here again, the transmitter terminal acknoledges the connection of the second li
     
 And you will see the message appear in both listening terminals.
 
+Now close one listener and type:
+
+.. code-block:: python
+
+    t.ping()
+
+Only one listener is listed with the True (is connected) flag.
+
 This in no magic, this is smart socket communication.
 
 Obviously, the behavior at connection and reception is driven my callback functions, which by default only print the listener's names or the message transmitted.
 All you will need now is write your own functions to replace these default callbacks.
 That's it.
 
+Note that, as you probably have seen when running the example/teaser, that the communication are natively non-blocking and asynchronous: no need to do the ennoying threading work yourself, hein is turnkey solution.
+
+The best typical example of the use of hein is having several applications talking to each other: they are all busy doing their own things but still get messages from each other at the time their are sent (not at the time they are not busy anymore to process them).
 
 Documentation
 =============
