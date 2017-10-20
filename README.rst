@@ -14,10 +14,10 @@
 
 Hein: Advanced Subscriber-Publisher Socket Communication.
 
-The native TPC/IP sockets implement a N-to-1 communication scheme: many clients (e.g. browsers) talk to a unique server (e.g. internet provider server) and engage a 1-to-1 communication (e.g. url request) with it for which they will all get their own individual answers (e.g. web page). In this particular case, the server is passive: the only thing it does is answer the clients in a 1-to-1 communication.
+The native TPC/IP sockets implement a N-to-1 communication scheme: many clients (e.g. browsers) talk to a unique server (e.g. internet provider server) and engage a 1-to-1 communication (e.g. url request) with the server from which they will all get their own individual answers (e.g. web page). In this particular case, the server is passive: the only thing it does is answer the clients in a 1-to-1 communication.
 If there is no client, the server does nothing. If there is no server, the client returns an error.
 
-Now let's imagine the reverse case where one would like to broadcast a same message to N listeners, where N is subject to changing, whether the listening service is launched or not. This is a typical case where one would like a client to talk to many listening servers... where the listening-servers did the "connection step" towards the broadcasting client... and the client is broadcasting its message even if no server is actually listening.
+Now let's imagine the reverse case where one would like to broadcast a same message to N listeners, where N is subject to changing, whether some of the listening services are launched or not. This is a typical case where one would like a client to talk to many listening servers... and where the listening-servers did the "connection step" towards the broadcasting client... and the client is broadcasting its message even if no server is actually listening.
 
 Well, my friend, you are stuck.
 
@@ -44,7 +44,7 @@ in the second one (transmitter), type:
     
 You will instantly see the transmitter terminal wishing a hearful welcome to its first listener.
 
-Ind in the third one (listener 2), type:
+In in the third one (listener 2), type:
 
 .. code-block:: python
 
@@ -62,7 +62,7 @@ And you will see the message appear in both listening terminals.
 This in no magic, this is smart socket communication.
 
 Obviously, the behavior at connection and reception is driven my callback functions, which by default only print the listener's names or the message transmitted.
-All you will need is write your own functions to replace this default callbacks.
+All you will need now is write your own functions to replace these default callbacks.
 That's it.
 
 
