@@ -23,6 +23,36 @@ Well, my friend, you are stuck.
 
 Actually not, because this is exactly what hein does: 1-Publisher to N-Subscriber socket communication.
 
+Exemple
+=======
+
+Straight to the point: launch 3 terminals in which you should start an interactive python interpreter.
+
+In the first terminal (listener 1), type:
+.. code-block:: python
+    from hein import SocReceiver
+    r = SocReceiver(port=50007, name="Captain")
+in the second one (transmitter), type:
+.. code-block:: python
+    from hein import SocTransmitter
+    t = SocTransmitter(port=50007, nreceivermax=2)
+You will instantly see the transmitter terminal wishing a hearful welcome to its first listener.
+
+Ind in the third one (listener 2), type:
+.. code-block:: python
+    from hein import SocReceiver
+    r = SocReceiver(port=50007, name="Kirk")
+Here again, the transmitter terminal acknoledges the connection of the second listener.
+Now type in the transmitter terminal:
+.. code-block:: python
+    t.tell_raw('hello!')
+And you will see the message appear in both listening terminals.
+
+This in no magic, this is smart socket communication.
+
+Obviously, the behavior at connection and reception is driven my callback functions, which by default only print the listener's names or the message transmitted. All you will need to do is write your own functions to replace this default callbacks.
+That's it.
+
 
 Documentation
 =============
