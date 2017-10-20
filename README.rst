@@ -61,7 +61,8 @@ And you will see the message appear in both listening terminals.
 
 This in no magic, this is smart socket communication.
 
-Obviously, the behavior at connection and reception is driven my callback functions, which by default only print the listener's names or the message transmitted. All you will need to do is write your own functions to replace this default callbacks.
+Obviously, the behavior at connection and reception is driven my callback functions, which by default only print the listener's names or the message transmitted.
+All you will need is write your own functions to replace this default callbacks.
 That's it.
 
 
