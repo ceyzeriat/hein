@@ -31,6 +31,8 @@ import select
 import time
 from byt import Byt
 from multiprocessing import Manager
+import json
+
 
 from . import core
 
@@ -152,21 +154,48 @@ class SocTransmitter(object):
         """
         if not len(kwargs) > 0:
             return False
-        return self._tell(core.merge_socket_info(**kwargs), core.DICTKEY)
+        return self._tell(core.merge_socket_dict(**kwargs), core.DICTKEY)
 
-    def tell_key(self, _the_key, **kwargs):
+    def tell_list(self, *args):
         """
-        Broadcasts a dictionary-type message using key provided
+        Broadcasts a list-type message
 
         Args:
-          * key (str[3]): the key of size 3
+          * the values to merge into a socket-compatible string
+        """
+        if not len(args) > 0:
+            return False
+        return self._tell(core.merge_socket_list(*args), core.LISTKEY)
+
+    #def tell_json(self, *args):
+    #    """
+    #    Broadcasts a json-compatible variable
+    #
+    #    Args:
+    #      * variable to convert to json-string
+    #    """
+    #    try:
+    #        v = json.dumps(v)
+    #    except:
+    #        return False
+    #    return self._tell(Byt(v), core.JSONKEY)
+
+    def tell_key(self, *args, **kwargs):
+        """
+        Broadcasts a dictionary-type message using the key provided
+
+        Args:
+          * key (str[3]): the key, of size 3
+
         Kwargs:
           * the keys-values to merge into a socket-compatible string
         """
-        key = Byt(_the_key)[:core.TINYKEYLENGTH]
+        if len(args) == 0:
+            return False
+        key = Byt(args[0])[:core.TINYKEYLENGTH]
         if not len(kwargs) > 0 or len(key) != 3:
             return False
-        return self._tell(core.merge_socket_info(**kwargs),
+        return self._tell(core.merge_socket_dict(**kwargs),
                           core.KEYPADDING + key + core.KEYPADDING)
 
     def tell_report(self, **kwargs):
@@ -178,7 +207,7 @@ class SocTransmitter(object):
         """
         if not len(kwargs) > 0:
             return False
-        return self._tell(core.merge_socket_info(**kwargs), core.REPORTKEY)
+        return self._tell(core.merge_socket_dict(**kwargs), core.REPORTKEY)
 
     def ping(self):
         """
@@ -317,12 +346,16 @@ def accept_receivers(self):
         name = core.receive(receiver, l=15, timeout=5.)
         if name is not None:
             name = str(name)
-            if name in self.receivers:  # replace old connection
-                # close broken socket
-                core.killSock(self.receivers[name])
-                receiver.send(core.ACK)
-                self.receivers[name] = receiver
-                self._newconnection(name)
+            if name in self.receivers:  # reciever already has such name
+                if self.ping().get(name, False):  # still active
+                    # refuse new connection
+                    core.killSock(receiver)
+                else:  # not active anymore.. replace old connection
+                    # close broken socket
+                    core.killSock(self.receivers.get(name))
+                    receiver.send(core.ACK)
+                    self.receivers[name] = receiver
+                    self._newconnection(name)
             else:  # name does not exist already
                 if not upToLimit:
                     receiver.send(core.ACK)

@@ -1,3 +1,15 @@
+TODO:
+- tell_json method (issue with bytes)
+- conserve types over transmission
+
+
+0.1.8 (2017-10-28)
+++++++++++++++++++
+
+- Added tell_list
+- Fixed infinite connection looping when adding two socrecievers with same name
+
+
 0.1.7 (2017-04-04)
 ++++++++++++++++++
 

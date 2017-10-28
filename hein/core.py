@@ -31,7 +31,7 @@ from byt import Byt
 
 
 # acknowledgement character
-ACK = Byt('\xaa')
+ACK = Byt('\x06')
 
 
 # escape character
@@ -39,12 +39,15 @@ ESCAPE = Byt('\xee')
 # split character for dictionaries between items
 DICTSEPARATOR = Byt('\xac\xbd')
 ESCAPEDDICTSEPARATOR = DICTSEPARATOR + ESCAPE
-# end character of a communication
-MESSAGEEND = Byt('\xac\x96')
-ESCAPEDMESSAGEEND = MESSAGEEND + ESCAPE
 # split character between key and value of a dictionary item
 # must a character that cannot be in a dict key
 DICTMAPPER = Byt(':')
+# split character between elements of a list
+LISTSEPARATOR = Byt('\xac\xbd')
+ESCAPEDLISTSEPARATOR = LISTSEPARATOR + ESCAPE
+# end character of a communication
+MESSAGEEND = Byt('\xac\x96')
+ESCAPEDMESSAGEEND = MESSAGEEND + ESCAPE
 
 # length of pre-pending keys - all must have the same length
 KEYPADDING = Byt('__')
@@ -60,6 +63,10 @@ REPORTKEY = KEYPADDING + Byt('rpt') + KEYPADDING
 RAWKEY = KEYPADDING + Byt('raw') + KEYPADDING
 # send this followed with a dictionary-type message
 DICTKEY = KEYPADDING + Byt('dic') + KEYPADDING
+# send this followed with a JSON-type message
+JSONKEY = KEYPADDING + Byt('jsn') + KEYPADDING
+# send this followed with a list-type message
+LISTKEY = KEYPADDING + Byt('lst') + KEYPADDING
 
 # sending frequency in Hz
 SENDBUFFERFREQ = 100
@@ -103,11 +110,12 @@ def killSock(sock):
     Args:
       * sock (socket): the sock to kill
     """
-    sock.shutdown(socket.SHUT_RDWR)
-    sock.close()
+    if sock is not None:
+        sock.shutdown(socket.SHUT_RDWR)
+        sock.close()
 
 
-def merge_socket_info(**kwargs):
+def merge_socket_dict(**kwargs):
     """
     Merges the data using the socket separator and returns a string
 
@@ -122,6 +130,24 @@ def merge_socket_info(**kwargs):
         ret += abit.replace(DICTSEPARATOR, ESCAPEDDICTSEPARATOR)
         ret += DICTSEPARATOR*2
     return ret
+
+
+def split_socket_dict(data):
+    """
+    Splits the data using the dictionary separator and returns a
+    dictionary
+
+    Args:
+      * data (Byt): the data to split
+    """
+    dic = {}
+    for item in data.split(DICTSEPARATOR*2):
+        if len(item) == 0:
+            continue
+        k, v = item.replace(ESCAPEDDICTSEPARATOR, DICTSEPARATOR)\
+                   .split(DICTMAPPER, 1)
+        dic[str(k)] = v
+    return dic
 
 
 def package_message(txt):
@@ -153,19 +179,33 @@ def split_flow(data, n=-1):
             + res[-1:]
 
 
-def split_socket_info(data):
+def merge_socket_list(*args):
     """
-    Splits the data using the dictionary separator and returns a
-    dictionary
+    Merges the data using the socket separator and returns a string
+
+    Args:
+      * the values to merge into a socket-compatible string
+    """
+    ret = Byt()
+    for v in args:
+        if not isinstance(v, (str, Byt)):
+            v = str(v)
+        ret += Byt(v).replace(LISTSEPARATOR, ESCAPEDLISTSEPARATOR)
+        ret += LISTSEPARATOR*2
+    return ret
+
+
+def split_socket_list(data):
+    """
+    Splits the data using the list separator and returns a
+    list
 
     Args:
       * data (Byt): the data to split
     """
-    dic = {}
-    for item in data.split(DICTSEPARATOR*2):
+    ret = []
+    for item in data.split(LISTSEPARATOR*2):
         if len(item) == 0:
             continue
-        k, v = item.replace(ESCAPEDDICTSEPARATOR, DICTSEPARATOR)\
-                   .split(DICTMAPPER, 1)
-        dic[str(k)] = v
-    return dic
+        ret.append(item.replace(ESCAPEDLISTSEPARATOR, LISTSEPARATOR))
+    return ret

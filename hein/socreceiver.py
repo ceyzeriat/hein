@@ -30,6 +30,7 @@ from threading import Thread
 import select
 import time
 from byt import Byt
+import json
 
 from . import core
 
@@ -210,14 +211,19 @@ def tellme(self):
                              comm[core.KEYLENGTH:])
             elif thekey == core.DICTKEY:
                 self.process('dic',
-                             core.split_socket_info(comm[core.KEYLENGTH:]))
+                             core.split_socket_dict(comm[core.KEYLENGTH:]))
             elif thekey == core.REPORTKEY:
                 self.process('rpt',
-                             core.split_socket_info(comm[core.KEYLENGTH:]))
+                             core.split_socket_dict(comm[core.KEYLENGTH:]))
+            elif thekey == core.LISTKEY:
+                self.process('lst',
+                             core.split_socket_list(comm[core.KEYLENGTH:]))
+            #elif thekey == core.JSONKEY:
+            #    self.process('jsn', json.loads(comm[core.KEYLENGTH:]))
             else:
                 self.process(str(thekey[len(core.KEYPADDING):
                                     len(core.KEYPADDING)+core.TINYKEYLENGTH]),
-                             core.split_socket_info(comm[core.KEYLENGTH:]))
+                             core.split_socket_dict(comm[core.KEYLENGTH:]))
     self._running = False
 
 
