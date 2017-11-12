@@ -23,7 +23,7 @@ Well, my friend, you are stuck.
 
 Actually not, because this is exactly what hein does: 1-Publisher to N-Subscriber socket communication.
 
-Exemple
+Example
 =======
 
 Straight to the point: launch 3 terminals in which you should start an interactive python interpreter.
@@ -62,10 +62,23 @@ And you will see the message appear in both listening terminals.
 Now close one listener and type:
 
 .. code-block:: python
-
+    
     t.ping()
 
-Only one listener is listed with the True (is connected) flag.
+Only one listener is listed with the True (is connected) flag. Now let's try another one that keeps the type of the inputs:
+
+.. code-block:: python
+
+    from datetime import datetime
+    import pytz
+    
+    t.tell_dict_type(string='hello', integer=34, float=13.4, d=datetime(2017, 12, 3, tzinfo=pytz.UTC))
+
+The receiver will get:
+
+.. code-block:: python
+
+    {'integer': 34, 'float': 13.4, 'string': 'hello', 'd': datetime.datetime(2017, 12, 3, 0, 0, tzinfo=<UTC>)}
 
 This in no magic, this is smart socket communication.
 
