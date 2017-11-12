@@ -28,6 +28,18 @@
 import socket
 import select
 from byt import Byt
+from datetime import datetime
+from datetime import date
+from datetime import time
+TZON = True
+try:
+    import pytz
+except ImportError:
+    TZON = False
+try:
+    unicode('')
+except:
+    unicode = str
 
 
 # acknowledgement character
@@ -63,10 +75,24 @@ REPORTKEY = KEYPADDING + Byt('rpt') + KEYPADDING
 RAWKEY = KEYPADDING + Byt('raw') + KEYPADDING
 # send this followed with a dictionary-type message
 DICTKEY = KEYPADDING + Byt('dic') + KEYPADDING
+# send this followed with a dictionary-type message conserving types
+DICTKEYTYPE = KEYPADDING + Byt('tdi') + KEYPADDING
+BOOLCODE = Byt("b")
+INTCODE = Byt("i")
+FLOATCODE = Byt("f")
+BYTESCODE = Byt("B")
+NONECODE = Byt("N")
+BYTCODE = Byt("Y")
+DTCODE = Byt("t")
+DATECODE = Byt("D")
+TIMECODE = Byt("T")
+UNICODE = Byt("u")
+STRCODE = Byt("s")
 # send this followed with a JSON-type message
 JSONKEY = KEYPADDING + Byt('jsn') + KEYPADDING
 # send this followed with a list-type message
 LISTKEY = KEYPADDING + Byt('lst') + KEYPADDING
+LISTKEYTYPE = KEYPADDING + Byt('tls') + KEYPADDING
 
 # sending frequency in Hz
 SENDBUFFERFREQ = 100
@@ -115,29 +141,124 @@ def killSock(sock):
         sock.close()
 
 
-def merge_socket_dict(**kwargs):
+def valtype2bytes(v):
+    """Returns (type(v), value) both as Byt
+    Works for any type in (int, float, bool, None, Byt, datetime,
+        date, time) and string types in (Byt, unicode, str, bytes)
+    Any other type will go through a repr call
+    """
+    if isinstance(v, Byt):
+        return BYTCODE, v
+    elif isinstance(v, bool):
+        return BOOLCODE, Byt("1" if v else "0")
+    elif isinstance(v, int):
+        return INTCODE, Byt(repr(v))
+    elif isinstance(v, float):
+        return FLOATCODE, Byt(repr(v))
+    elif v is None:
+        return NONECODE, Byt()
+    elif isinstance(v, datetime):
+        return DTCODE, Byt("{:d},{:d},{:d},{:d},{:d},{:d},{:d},{}"\
+                            .format(v.year, v.month, v.day, v.hour,
+                                    v.minute, v.second, v.microsecond,
+                                    getattr(v.tzinfo, "zone", "")))
+    elif isinstance(v, date):
+        return DATECODE, Byt("{:d},{:d},{:d}".format(v.year, v.month, v.day))
+    elif isinstance(v, time):
+        return TIMECODE, Byt("{:d},{:d},{:d},{:d},{}"\
+                                .format(v.hour, v.minute, v.second,
+                                        v.microsecond,
+                                        getattr(v.tzinfo, "zone", "")))
+    else:
+        return any2bytes(v)
+
+
+def any2bytes(v):
+    """Returns (type(v), value) both as Byt
+    Works for string types in (Byt, unicode, str, bytes)
+    Any other type will go through a repr call
+    """
+    if isinstance(v, Byt):
+        return BYTCODE, v
+    elif isinstance(v, unicode):  # catches python3 str and python2 unicode
+        return UNICODE, Byt(v.encode("utf-8"))
+    elif isinstance(v, str):  # only python2 str reach here
+        return STRCODE, Byt(v)
+    elif isinstance(v, bytes):  # only python3 bytes here
+        return BYTESCODE, Byt(v)
+    else:
+        v = repr(v)
+        # catches python3 str and python2 unicode
+        if isinstance(v, unicode):
+            return UNICODE, Byt(v.encode("utf-8"))
+        # only python2 str reach here
+        return STRCODE, Byt(v)
+
+
+def bytes2type(typ, v=Byt()):
+    if typ == BOOLCODE:
+        return bool(int(v))
+    elif typ == INTCODE:
+        return int(v)
+    elif typ == FLOATCODE:
+        return float(v)
+    elif typ == BYTESCODE:  # only python3 bytes here as input
+        return bytes(v)  # python2/3 latin-1
+    elif typ == NONECODE:
+        return None
+    elif typ == BYTCODE:
+        return v
+    elif typ in (DTCODE, DATECODE, TIMECODE):
+        l = v.split(Byt(','))
+        tz = None
+        if TZON and typ in (DTCODE, TIMECODE):
+            tzpoped = l.pop(-1)
+            if len(tzpoped) >0:
+                tz = pytz.timezone(tzpoped)
+        l = list(map(int, l))
+        if typ in DATECODE:
+            return date(*l[:3])
+        elif typ in TIMECODE:
+            return time(*l[:4], tzinfo=tz)
+        elif typ in DTCODE:
+            return datetime(*l[:7], tzinfo=tz)
+    elif typ == UNICODE:
+        return unicode(v)  # catches python3 str and python2 unicode
+    elif typ == STRCODE:
+        return bytes(v)  # only python2 str here as input, to python2/3 latin-1
+
+
+def merge_socket_dict(*args, **kwargs):
     """
     Merges the data using the socket separator and returns a string
+
+    Args:
+      * 1st: bool, whether to add a repr-type indication to keep track of
+        the type
 
     Kwargs:
       * the keys-values to merge into a socket-compatible string
     """
     ret = Byt()
     for k, v in kwargs.items():
-        if not isinstance(v, (str, Byt)):
-            v = str(v)
-        abit = Byt(k) + DICTMAPPER + Byt(v)
+        if not bool(args[0]):
+            dum, v = any2bytes(v)
+        else:
+            typ, v = valtype2bytes(v)
+            v = typ + DICTMAPPER + v
+        abit = Byt(k) + DICTMAPPER + v
         ret += abit.replace(DICTSEPARATOR, ESCAPEDDICTSEPARATOR)
         ret += DICTSEPARATOR*2
     return ret
 
 
-def split_socket_dict(data):
+def split_socket_dict(typ, data):
     """
     Splits the data using the dictionary separator and returns a
     dictionary
 
     Args:
+      * typ (bool): whether to retrieve the type from the data
       * data (Byt): the data to split
     """
     dic = {}
@@ -146,6 +267,8 @@ def split_socket_dict(data):
             continue
         k, v = item.replace(ESCAPEDDICTSEPARATOR, DICTSEPARATOR)\
                    .split(DICTMAPPER, 1)
+        if bool(typ):
+            v = bytes2type(*v.split(DICTMAPPER, 1))
         dic[str(k)] = v
     return dic
 
@@ -179,33 +302,41 @@ def split_flow(data, n=-1):
             + res[-1:]
 
 
-def merge_socket_list(*args):
+def merge_socket_list(typ, *args):
     """
     Merges the data using the socket separator and returns a string
 
     Args:
+      * typ (bool): whether to retrieve the type from the data
       * the values to merge into a socket-compatible string
     """
     ret = Byt()
     for v in args:
-        if not isinstance(v, (str, Byt)):
-            v = str(v)
-        ret += Byt(v).replace(LISTSEPARATOR, ESCAPEDLISTSEPARATOR)
+        if not typ:
+            dum, v = any2bytes(v)
+        else:
+            typ, v = valtype2bytes(v)
+            v = typ + DICTMAPPER + v
+        ret += v.replace(LISTSEPARATOR, ESCAPEDLISTSEPARATOR)
         ret += LISTSEPARATOR*2
     return ret
 
 
-def split_socket_list(data):
+def split_socket_list(typ, data):
     """
     Splits the data using the list separator and returns a
     list
 
     Args:
+      * typ (bool): whether to retrieve the type from the data
       * data (Byt): the data to split
     """
     ret = []
     for item in data.split(LISTSEPARATOR*2):
         if len(item) == 0:
             continue
-        ret.append(item.replace(ESCAPEDLISTSEPARATOR, LISTSEPARATOR))
+        item = item.replace(ESCAPEDLISTSEPARATOR, LISTSEPARATOR)
+        if bool(typ):
+            item = bytes2type(*item.split(DICTMAPPER, 1))
+        ret.append(item)
     return ret

@@ -211,19 +211,26 @@ def tellme(self):
                              comm[core.KEYLENGTH:])
             elif thekey == core.DICTKEY:
                 self.process('dic',
-                             core.split_socket_dict(comm[core.KEYLENGTH:]))
+                        core.split_socket_dict(False, comm[core.KEYLENGTH:]))
+            elif thekey == core.DICTKEYTYPE:
+                self.process('dic',
+                        core.split_socket_dict(True, comm[core.KEYLENGTH:]))
             elif thekey == core.REPORTKEY:
                 self.process('rpt',
-                             core.split_socket_dict(comm[core.KEYLENGTH:]))
+                        core.split_socket_dict(False, comm[core.KEYLENGTH:]))
             elif thekey == core.LISTKEY:
                 self.process('lst',
-                             core.split_socket_list(comm[core.KEYLENGTH:]))
+                        core.split_socket_list(False, comm[core.KEYLENGTH:]))
+            elif thekey == core.LISTKEYTYPE:
+                self.process('lst',
+                        core.split_socket_list(True, comm[core.KEYLENGTH:]))
             #elif thekey == core.JSONKEY:
             #    self.process('jsn', json.loads(comm[core.KEYLENGTH:]))
             else:
-                self.process(str(thekey[len(core.KEYPADDING):
-                                    len(core.KEYPADDING)+core.TINYKEYLENGTH]),
-                             core.split_socket_dict(comm[core.KEYLENGTH:]))
+                self.process(
+                        str(thekey[len(core.KEYPADDING):
+                                   len(core.KEYPADDING)+core.TINYKEYLENGTH]),
+                        core.split_socket_dict(False, comm[core.KEYLENGTH:]))
     self._running = False
 
 

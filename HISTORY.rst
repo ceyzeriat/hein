@@ -1,6 +1,12 @@
 TODO:
 - tell_json method (issue with bytes)
-- conserve types over transmission
+
+
+0.1.9 (2017-11-12)
+++++++++++++++++++
+
+- Added tell_list_type and tell_dict_type which keep the type of the data over transmission (works for int, float, bool, None, Byt, datetime.datetime, datetime.data, datetime.time, str, unicode (Pyt2), and bytes (Pyt3))
+- Modified 'tell' methods to accept unicode characters. Python3 built-in 'str' and Pyhton2 built-in 'unicode' are encoded as "utf-8", Python2 built-in 'str' and Python2/3 'bytes' are encoded as "ascii" (i.e. "latin-1").
 
 
 0.1.8 (2017-10-28)

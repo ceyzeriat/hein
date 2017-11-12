@@ -143,7 +143,7 @@ class SocTransmitter(object):
         """
         if not len(txt) > 0:
             return False
-        return self._tell(Byt(txt), core.RAWKEY)
+        return self._tell(core.any2bytes(txt)[1], core.RAWKEY)
 
     def tell_dict(self, **kwargs):
         """
@@ -154,7 +154,20 @@ class SocTransmitter(object):
         """
         if not len(kwargs) > 0:
             return False
-        return self._tell(core.merge_socket_dict(**kwargs), core.DICTKEY)
+        return self._tell(core.merge_socket_dict(False, **kwargs),
+                          core.DICTKEY)
+
+    def tell_dict_type(self, **kwargs):
+        """
+        Broadcasts a dictionary-type message, and conserves the types
+
+        Kwargs:
+          * the keys-values to merge into a socket-compatible string
+        """
+        if not len(kwargs) > 0:
+            return False
+        return self._tell(core.merge_socket_dict(True, **kwargs),
+                          core.DICTKEYTYPE)
 
     def tell_list(self, *args):
         """
@@ -165,7 +178,20 @@ class SocTransmitter(object):
         """
         if not len(args) > 0:
             return False
-        return self._tell(core.merge_socket_list(*args), core.LISTKEY)
+        return self._tell(core.merge_socket_list(False, *args),
+                          core.LISTKEY)
+
+    def tell_list_type(self, *args):
+        """
+        Broadcasts a list-type message, and conserves the types
+
+        Args:
+          * the values to merge into a socket-compatible string
+        """
+        if not len(args) > 0:
+            return False
+        return self._tell(core.merge_socket_list(True, *args),
+                          core.LISTKEYTYPE)
 
     #def tell_json(self, *args):
     #    """
@@ -195,7 +221,7 @@ class SocTransmitter(object):
         key = Byt(args[0])[:core.TINYKEYLENGTH]
         if not len(kwargs) > 0 or len(key) != 3:
             return False
-        return self._tell(core.merge_socket_dict(**kwargs),
+        return self._tell(core.merge_socket_dict(False, **kwargs),
                           core.KEYPADDING + key + core.KEYPADDING)
 
     def tell_report(self, **kwargs):
@@ -207,7 +233,8 @@ class SocTransmitter(object):
         """
         if not len(kwargs) > 0:
             return False
-        return self._tell(core.merge_socket_dict(**kwargs), core.REPORTKEY)
+        return self._tell(core.merge_socket_dict(False, **kwargs),
+                          core.REPORTKEY)
 
     def ping(self):
         """
