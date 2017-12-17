@@ -1,13 +1,5 @@
 .. hein
 
-.. image:: http://img.shields.io/travis/ceyzeriat/hein/master.svg?style=flat
-
-    :target: https://travis-ci.org/ceyzeriat/hein
-
-.. image:: https://coveralls.io/repos/github/ceyzeriat/hein/badge.svg?branch=master
-
-    :target: https://coveralls.io/github/ceyzeriat/hein?branch=master
-
 .. image:: http://img.shields.io/badge/license-GPLv3-blue.svg?style=flat
 
     :target: https://github.com/ceyzeriat/hein/blob/master/LICENSE

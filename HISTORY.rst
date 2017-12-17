@@ -1,4 +1,4 @@
-0.1.12 (2017-12-17)
+0.1.13 (2017-12-17)
 +++++++++++++++++++
 
 - Added tell_json and tell_json_ext which are able to pass any data structure, and keep the type information.
