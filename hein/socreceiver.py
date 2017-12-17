@@ -224,8 +224,10 @@ def tellme(self):
             elif thekey == core.LISTKEYTYPE:
                 self.process('lst',
                         core.split_socket_list(True, comm[core.KEYLENGTH:]))
-            #elif thekey == core.JSONKEY:
-            #    self.process('jsn', json.loads(comm[core.KEYLENGTH:]))
+            elif thekey == core.JSONKEY:
+                self.process('jsn', json.loads(str(comm[core.KEYLENGTH:])))
+            elif thekey == core.JSONXKEY:
+                self.process('jxn', core.jsonX_loads(comm[core.KEYLENGTH:]))
             else:
                 self.process(
                         str(thekey[len(core.KEYPADDING):

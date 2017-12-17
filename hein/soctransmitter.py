@@ -43,8 +43,7 @@ __all__ = ['SocTransmitter']
 class SocTransmitter(object):
     def __init__(self, port, nreceivermax, start=True, portname="",
                  timeoutACK=1.):
-        """
-        Creates a transmitting socket to which receiving socket
+        """Creates a transmitting socket to which receiving socket
         can listen.
 
         Args:
@@ -78,8 +77,7 @@ class SocTransmitter(object):
     __repr__ = __str__
     
     def start(self):
-        """
-        Initializes and starts the broadcasting on the communication
+        """Initializes and starts the broadcasting on the communication
         port, if not already started.
         """
         if self.running:
@@ -99,8 +97,7 @@ class SocTransmitter(object):
 
     @property
     def nreceivers(self):
-        """
-        The number of receivers currently listening to the port.
+        """The number of receivers currently listening to the port.
         Note that the active receivers are updated at each communication
         and some receivers may have dropped since then
         """
@@ -125,8 +122,7 @@ class SocTransmitter(object):
         return True
 
     def _tell(self, txt, key):
-        """
-        Does the real preparation and sending of the message
+        """Does the real preparation and sending of the message
         """
         if not self.running:
             return False
@@ -135,80 +131,89 @@ class SocTransmitter(object):
         return True
 
     def tell_raw(self, txt):
-        """
-        Broadcasts a raw-type message
+        """Broadcasts a raw message
 
         Args:
           * txt (Byt or str): the message
         """
         if not len(txt) > 0:
             return False
-        return self._tell(core.any2bytes(txt)[1], core.RAWKEY)
+        return self._tell(
+                    core.base_type2bytes(txt, keep_typ=False, jsonX=False),
+                    core.RAWKEY)
 
     def tell_dict(self, **kwargs):
-        """
-        Broadcasts a dictionary-type message
+        """Broadcasts a dictionary-type message
 
         Kwargs:
           * the keys-values to merge into a socket-compatible string
         """
         if not len(kwargs) > 0:
             return False
-        return self._tell(core.merge_socket_dict(False, **kwargs),
+        return self._tell(core.merge_socket_dict(False, kwargs),
                           core.DICTKEY)
 
     def tell_dict_type(self, **kwargs):
-        """
-        Broadcasts a dictionary-type message, and conserves the types
+        """Broadcasts a dictionary-type message, and conserves the types
 
         Kwargs:
           * the keys-values to merge into a socket-compatible string
         """
         if not len(kwargs) > 0:
             return False
-        return self._tell(core.merge_socket_dict(True, **kwargs),
+        return self._tell(core.merge_socket_dict(True, kwargs),
                           core.DICTKEYTYPE)
 
     def tell_list(self, *args):
-        """
-        Broadcasts a list-type message
+        """Broadcasts a list-type message
 
         Args:
           * the values to merge into a socket-compatible string
         """
         if not len(args) > 0:
             return False
-        return self._tell(core.merge_socket_list(False, *args),
+        return self._tell(core.merge_socket_list(False, args),
                           core.LISTKEY)
 
     def tell_list_type(self, *args):
-        """
-        Broadcasts a list-type message, and conserves the types
+        """Broadcasts a list-type message, and conserves the types
 
         Args:
           * the values to merge into a socket-compatible string
         """
         if not len(args) > 0:
             return False
-        return self._tell(core.merge_socket_list(True, *args),
+        return self._tell(core.merge_socket_list(True, args),
                           core.LISTKEYTYPE)
 
-    #def tell_json(self, *args):
-    #    """
-    #    Broadcasts a json-compatible variable
-    #
-    #    Args:
-    #      * variable to convert to json-string
-    #    """
-    #    try:
-    #        v = json.dumps(v)
-    #    except:
-    #        return False
-    #    return self._tell(Byt(v), core.JSONKEY)
+    def tell_json(self, v):
+        """Broadcasts a json-compatible variable
+    
+        Args:
+          * v (json serialize-able): variable to convert to json-string
+        """
+        v = json.dumps(v)
+        return self._tell(Byt(v), core.JSONKEY)
+
+    def tell_json_ext(self, v):
+        """Broadcasts an extended-json variable, cross-compatible
+        between python 2 and 3
+
+        Supported types:
+          * numerical: int, float
+          * base: bool, None
+          * time: datetime, date, time (with timezones if pytz is
+            available),
+          * string: Byt, unicode, str, bytes
+    
+        Args:
+          * v: variable to convert to an extended-json-string
+        """
+        v = core.jsonX_dumps(v)
+        return self._tell(v, core.JSONXKEY)
 
     def tell_key(self, *args, **kwargs):
-        """
-        Broadcasts a dictionary-type message using the key provided
+        """Broadcasts a dictionary-type message using the key provided
 
         Args:
           * key (str[3]): the key, of size 3
@@ -219,26 +224,24 @@ class SocTransmitter(object):
         if len(args) == 0:
             return False
         key = Byt(args[0])[:core.TINYKEYLENGTH]
-        if not len(kwargs) > 0 or len(key) != 3:
+        if not len(kwargs) > 0 or len(key) != core.TINYKEYLENGTH:
             return False
-        return self._tell(core.merge_socket_dict(False, **kwargs),
+        return self._tell(core.merge_socket_dict(False, kwargs),
                           core.KEYPADDING + key + core.KEYPADDING)
 
     def tell_report(self, **kwargs):
-        """
-        Broadcasts a dictionary-type message
+        """Broadcasts a dictionary-type message
 
         Kwargs:
           * the keys-values to merge into a socket-compatible string
         """
         if not len(kwargs) > 0:
             return False
-        return self._tell(core.merge_socket_dict(False, **kwargs),
+        return self._tell(core.merge_socket_dict(False, kwargs),
                           core.REPORTKEY)
 
     def ping(self):
-        """
-        Pings all receivers to check their health, updates the
+        """Pings all receivers to check their health, updates the
         receivers list and returns the result
         """
         self._tell(Byt(), core.PINGKEY)
@@ -247,8 +250,7 @@ class SocTransmitter(object):
         return ping_res
 
     def close_receivers(self):
-        """
-        Forces all receivers to drop listening
+        """Forces all receivers to drop listening
         """
         self._tell('', core.DIEKEY)
         for k, v in list(self.receivers.items()):
@@ -256,8 +258,7 @@ class SocTransmitter(object):
             del self.receivers[k]
 
     def close(self):
-        """
-        Shuts the broadcasting down, and forces all receivers to
+        """Shuts the broadcasting down, and forces all receivers to
         drop listening. The broadcasting can be restarted using
         ``start``.
         """
@@ -270,8 +271,7 @@ class SocTransmitter(object):
 
     @property
     def running(self):
-        """
-        Whether the broadcasting is active or not
+        """Whether the broadcasting is active or not
         """
         return self._running
 
@@ -280,8 +280,7 @@ class SocTransmitter(object):
         pass
 
     def _newconnection(self, name):
-        """
-        Call-back function when a new connection
+        """Call-back function when a new connection
         is extablished
 
         Can be overriden, although ``name`` parameter is mandatory
@@ -290,9 +289,9 @@ class SocTransmitter(object):
 
 
 def send_buffer(self):
+    """Infinite loop sending messages
     """
-    Infinite loop sending messages
-    """
+    ALMOST = 0.85
     while self.running:
         # make a list-copy
         lines_to_send = list(self.sending_buffer)
@@ -303,11 +302,11 @@ def send_buffer(self):
                 break
             continue
         # too many lines to send.. gotta merge some to keep up
-        elif len(lines_to_send) >= 0.85*core.SENDBUFFERFREQ:
+        elif len(lines_to_send) >= ALMOST*core.SENDBUFFERFREQ:
             # average amount of lines to be merged
-            avg_join = int(len(lines_to_send) / (0.85 * core.SENDBUFFERFREQ))
+            avg_join = int(len(lines_to_send) / (ALMOST * core.SENDBUFFERFREQ))
             # make init copy
-            new_lines_to_send = [list(lines_to_send[0] + (1,))]
+            new_lines_to_send = [[lines_to_send[0], lines_to_send[1], 1]]
             # loop to merge
             for line, ping in lines_to_send[1:]:
                 # if not ping and not previously ping and below average merge
@@ -322,7 +321,8 @@ def send_buffer(self):
         # iterate on lines
         for item in lines_to_send:
             # merged lines have a thrid argument, default 1
-            line, ping, cnt = (list(item) + [1])[:3]
+            line, ping = item[:2]
+            cnt = item[2] if len(item) > 2 else 1
             t = time.time()
             # in case of ping, init
             ping_res = {}
@@ -346,8 +346,7 @@ def send_buffer(self):
 
 
 def accept_receivers(self):
-    """
-    Infinite loop registering all new receivers
+    """Infinite loop registering all new receivers
     """
     while self.running:
         receiver = None

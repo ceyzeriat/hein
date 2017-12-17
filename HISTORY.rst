@@ -1,11 +1,15 @@
-TODO:
-- tell_json method (issue with bytes)
+0.1.10 (2017-12-17)
+++++++++++++++++++
+
+- Added tell_json and tell_json_ext which are able to pass any data structure, and keep the type information.
+- tell_json is a convenience method that uses a pure-json implementation of the serializer, which means that python3 will not be able to serialize bytes.
+- tell_json_ext is a custom serializer that is cross-consistent between python 2 and 3, and will deal properly with bytes as well as datetime objects.
 
 
 0.1.9 (2017-11-12)
 ++++++++++++++++++
 
-- Added tell_list_type and tell_dict_type which keep the type of the data over transmission (works for int, float, bool, None, Byt, datetime.datetime, datetime.data, datetime.time, str, unicode (Pyt2), and bytes (Pyt3))
+- Added tell_list_type and tell_dict_type which keep the type of the data over transmission (works for int, float, bool, None, Byt, datetime.datetime, datetime.date, datetime.time, str, unicode (Pyt2), and bytes (Pyt3))
 - Modified 'tell' methods to accept unicode characters. Python3 built-in 'str' and Pyhton2 built-in 'unicode' are encoded as "utf-8", Python2 built-in 'str' and Python2/3 'bytes' are encoded as "ascii" (i.e. "latin-1").
 
 
@@ -13,7 +17,7 @@ TODO:
 ++++++++++++++++++
 
 - Added tell_list
-- Fixed infinite connection looping when adding two socrecievers with same name
+- Fixed infinite connection looping when adding two socreceivers with same name
 
 
 0.1.7 (2017-04-04)
