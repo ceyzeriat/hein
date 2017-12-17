@@ -1,9 +1,10 @@
-0.1.11 (2017-12-17)
-++++++++++++++++++
+0.1.12 (2017-12-17)
++++++++++++++++++++
 
 - Added tell_json and tell_json_ext which are able to pass any data structure, and keep the type information.
 - tell_json is a convenience method that uses a pure-json implementation of the serializer, which means that python3 will not be able to serialize bytes.
 - tell_json_ext is a custom serializer that is cross-consistent between python 2 and 3, and will deal properly with bytes as well as datetime objects.
+- fix README
 
 
 0.1.9 (2017-11-12)
