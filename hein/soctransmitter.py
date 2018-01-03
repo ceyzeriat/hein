@@ -117,9 +117,19 @@ class SocTransmitter(object):
             else:
                 return None
         elif not core.getAR(self.receivers[name], timeout=self.timeoutACK):
-            del self.receivers[name]
-            return False
+            return self._dropped(name=name)
         return True
+   
+    def _dropped(self, name):
+        """Called-back function when a receiver did not send the
+        acknowledgement within the timeout period.
+        Default behavior is drop the receiver and return False (used to
+        populate the answer of a ping call)
+        
+        Can be overriden, although ``name`` parameter is mandatory
+        """
+        del self.receivers[name]
+        return False
 
     def _tell(self, txt, key):
         """Does the real preparation and sending of the message
