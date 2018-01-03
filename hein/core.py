@@ -38,7 +38,7 @@ try:
 except ImportError:
     TZON = False
 try:
-    unicode('')
+    unicode
 except:
     unicode = str
 
@@ -307,7 +307,8 @@ def bytes2type(v):
         l = v.split(Byt(','))
         tz = None
         if typ in (DTCODE, TIMECODE):
-            tzpoped = l.pop(-1)
+            # last argument is TZ, and pytz needs a str here
+            tzpoped = str(l.pop(-1))
             if len(tzpoped) > 0:
                 if TZON:
                     tz = pytz.timezone(tzpoped)
