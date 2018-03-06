@@ -9,21 +9,26 @@
 :Author: Guillaume Schworer
 :Version: 0.1
 
-Hein: Advanced Subscriber-Publisher Socket Communication.
+Hein: Advanced Subscriber-Publisher Socket Communication. Fully compatible python2 and 3.
 
 The native TPC/IP sockets implement a N-to-1 communication scheme: many clients (e.g. browsers) talk to a unique server (e.g. internet provider server) and engage a 1-to-1 communication (e.g. url request) with the server from which they will all get their own individual answers (e.g. web page). In this particular case, the server is passive: the only thing it does is answer the clients in a 1-to-1 communication.
 If there is no client, the server does nothing. If there is no server, the client returns an error.
 
-Now let's imagine the reverse case where one would like to broadcast a same message to N listeners, where N is subject to changing, whether some of the listening services are launched or not. This is a typical case where one would like a client to talk to many listening servers... and where the listening-servers did the "connection step" towards the broadcasting client... and the client is broadcasting its message even if no server is actually listening.
+Now let's imagine the reverse case where one would like to broadcast the same message to N listeners (each of them in a perfectly separate and independent environment/process/namespace), where N is subject to changing with time, no matter if some of the listening services are launched or not, or dropped.
+
+This is a typical case where one would like a client to talk to many listening servers... and where the listening-servers did themselves the "connection step" towards the broadcasting client... and where the client is broadcasting its messages even if no server is actually listening.
 
 Well, my friend, you are stuck.
 
-Actually not, because this is exactly what hein does: 1-Publisher to N-Subscriber socket communication.
+Actually not, because this is exactly what `hein` does: 1-Publisher to N-Subscriber ashynchronous socket communication, turn-key - check the example below.
+
+NB: `PyDispatcher`, `Dispatch`, `PyPubSub`, `smokesignal` or other similar libraries will get you to the point where 2 threads can talk to each other - that is great for some applications, but these threads must share the publisher object to record the registration of subscribers: this is not an option when one has several processes, possibly running on different machines. `ZeroMQ` will get you to the point where you can talk between processes. However, all of the asynchronous heavy logistic is left for you to implement, and the socket-communication will crash when a subscriber drops (unless you as well cover this case in your own implementation).
+
 
 Example
 =======
 
-Straight to the point: launch 3 terminals in which you should start an interactive python interpreter.
+Straight to the point: launch 3 terminals in which you should start an interactive python interpreter (not an IDE).
 
 In the first terminal (listener 1), type:
 
@@ -83,9 +88,9 @@ Obviously, the behavior at connection and reception is driven my callback functi
 All you will need now is write your own functions to replace these default callbacks.
 That's it.
 
-Note that, as you probably have seen when running the example/teaser, that the communication are natively non-blocking and asynchronous: no need to do the ennoying threading work yourself, hein is turnkey solution.
+Note that, as you probably have seen when running the example/teaser, that the communication are natively non-blocking and asynchronous: no need to do the ennoying threading work yourself, `hein` library is turnkey solution (unlike ZeroMQ).
 
-The best typical example of the use of hein is having several applications talking to each other: they are all busy doing their own things but still get messages from each other at the time their are sent (not at the time they are not busy anymore to process them).
+The best typical example of the use of hein is having several applications talking to each other: they are all busy doing their own things but still get messages from each other at the time their are sent (i.e. async, not at the time they are not busy anymore to process them).
 
 Documentation
 =============
@@ -98,7 +103,7 @@ Requirements
 
 Hein requires the following Python packages:
 
-* socket: Obviously
+* socket: Really?
 * threading, select: for threading and port-reading
 * time, os: for basic stuff
 * byt: to handle chains of bytes identically no matter the python version
