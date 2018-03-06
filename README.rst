@@ -14,15 +14,15 @@ Hein: Advanced Subscriber-Publisher Socket Communication. Fully compatible pytho
 The native TPC/IP sockets implement a N-to-1 communication scheme: many clients (e.g. browsers) talk to a unique server (e.g. internet provider server) and engage a 1-to-1 communication (e.g. url request) with the server from which they will all get their own individual answers (e.g. web page). In this particular case, the server is passive: the only thing it does is answer the clients in a 1-to-1 communication.
 If there is no client, the server does nothing. If there is no server, the client returns an error.
 
-Now let's imagine the reverse case where one would like to broadcast the same message to N listeners (each of them in a perfectly separate and independent environment/process/namespace), where N is subject to changing with time, no matter if some of the listening services are launched or not, or dropped.
+Now let's imagine the reverse case where one wants to broadcast the same message to N listeners (each of them in a perfectly separate and independent environment/process/namespace), where N is subject to changing with time, and no matter if some of the listeners are launched, not launched (yet), or dropped.
 
-This is a typical case where one would like a client to talk to many listening servers... and where the listening-servers did themselves the "connection step" towards the broadcasting client... and where the client is broadcasting its messages even if no server is actually listening.
+This is a typical case where one needs a unique client to talk to several listening servers... and where the servers did themselves the "connection step" towards the broadcasting client... and where the client is broadcasting its messages even if no server is actually listening.
 
 Well, my friend, you are stuck.
 
 Actually not, because this is exactly what `hein` does: 1-Publisher to N-Subscriber ashynchronous socket communication, turn-key - check the example below.
 
-NB: ``PyDispatcher``, ``Dispatch``, ``PyPubSub``, ``smokesignal`` or other similar libraries will get you to the point where 2 threads can talk to each other - that is great for some applications, but threads are not processes, and they must share the publisher object to record the registration of subscribers: this is not an option when one has several processes, possibly running on different machines on a shared network. ``ZeroMQ`` will get you to the point where you can talk between processes. However, all of the asynchronous heavy logistics is left for you to implement, and the socket-communication will crash when a subscriber drops (unless you as well cover this case in your own implementation).
+NB: ``PyDispatcher``, ``Dispatch``, ``PyPubSub``, ``smokesignal`` or other similar libraries will get you to the point where several threads can talk to each other - that is great for some applications, but threads are not processes and you will be required to share the publisher object among subscribers: this is not an option when subscribers run in separate processes, possibly on different machines. ``ZeroMQ`` will get you to the point where you can talk between processes. However, all of the asynchronous heavy logistics is left for you to implement, and the socket connections will crash when a subscriber drops (unless you cover this case in your own implementation as well). Both of these tweaks are natively covered in ``hein``: minimal effort.
 
 
 Example
@@ -107,6 +107,7 @@ Hein requires the following Python packages:
 * threading, select: for threading and port-reading
 * time, os: for basic stuff
 * byt: to handle chains of bytes identically no matter the python version
+* pytz: optional, for handling datetime-timezones
 
 
 Installation
