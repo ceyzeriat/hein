@@ -22,7 +22,7 @@ Well, my friend, you are stuck.
 
 Actually not, because this is exactly what `hein` does: 1-Publisher to N-Subscriber ashynchronous socket communication, turn-key - check the example below.
 
-NB: `PyDispatcher`, `Dispatch`, `PyPubSub`, `smokesignal` or other similar libraries will get you to the point where 2 threads can talk to each other - that is great for some applications, but these threads must share the publisher object to record the registration of subscribers: this is not an option when one has several processes, possibly running on different machines. `ZeroMQ` will get you to the point where you can talk between processes. However, all of the asynchronous heavy logistic is left for you to implement, and the socket-communication will crash when a subscriber drops (unless you as well cover this case in your own implementation).
+NB: ``PyDispatcher``, ``Dispatch``, ``PyPubSub``, ``smokesignal`` or other similar libraries will get you to the point where 2 threads can talk to each other - that is great for some applications, but threads are not processes, and they must share the publisher object to record the registration of subscribers: this is not an option when one has several processes, possibly running on different machines on a shared network. ``ZeroMQ`` will get you to the point where you can talk between processes. However, all of the asynchronous heavy logistics is left for you to implement, and the socket-communication will crash when a subscriber drops (unless you as well cover this case in your own implementation).
 
 
 Example
