@@ -281,6 +281,7 @@ def base_type2bytes(v, keep_typ, jsonX=False):
         # only python2 str reach here
         else:
             code = STRCODE
+        data = Byt(data)
         if jsonX:
             data = esc_quote(data)
         if keep_typ:
