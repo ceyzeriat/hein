@@ -316,7 +316,7 @@ def send_buffer(self):
             # average amount of lines to be merged
             avg_join = int(len(lines_to_send) / (ALMOST * core.SENDBUFFERFREQ))
             # make init copy
-            new_lines_to_send = [[lines_to_send[0], lines_to_send[1], 1]]
+            new_lines_to_send = [[lines_to_send[0][0], lines_to_send[0][1], 1]]
             # loop to merge
             for line, ping in lines_to_send[1:]:
                 # if not ping and not previously ping and below average merge
