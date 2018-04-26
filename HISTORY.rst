@@ -1,3 +1,12 @@
+0.2.0 (2018-04-26)
++++++++++++++++++++
+
+- Deprecated all "tell" methods of soctransmitter but tell_raw and tell_json
+- Both tell_raw and tell_json take an optional tag (str) to indicate what kind of message is transmitted
+- tell_json method automatically conserves the type of the value passed
+- tell_json method takes an optional unpack (bool, default True) argument that allows to not automatically unpack the message upon reception
+
+
 0.1.13 (2017-12-17)
 +++++++++++++++++++
 
