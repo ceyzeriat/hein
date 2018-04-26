@@ -7,7 +7,7 @@
 :Name: hein
 :Website: https://github.com/ceyzeriat/hein
 :Author: Guillaume Schworer
-:Version: 0.1
+:Version: 0.2
 
 Hein: Advanced Subscriber-Publisher Socket Communication. Fully compatible python2 and 3.
 
