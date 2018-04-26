@@ -134,7 +134,7 @@ class SocTransmitter(object):
         del self.receivers[name]
         return False
 
-    def _tell(self, txt, key, tag, unpack):
+    def _tell(self, txt, key, tag=None, unpack=True):
         """Does the real preparation and sending of the message
         """
         if not self.running:
@@ -162,7 +162,7 @@ class SocTransmitter(object):
         txt = core.base_type2bytes(txt, keep_typ=False, json=False)
         return self._tell(txt=txt, key=core.RAWKEY, tag=tag, unpack=False)
 
-    def tell_json(self, v, tag=None, unpack=True):
+    def tell(self, v, tag=None, unpack=True):
         """Broadcasts an extended-json variable, cross-compatible
         between python 2 and 3
 
@@ -185,56 +185,62 @@ class SocTransmitter(object):
         return self._tell(txt=v, key=core.JSONKEY, tag=tag, unpack=unpack)
 
     def tell_dict(self, *args, **kwargs):
-        """DEPRECATED, use tell_json instead
+        """DEPRECATED, use tell instead
         Broadcasts a dictionary-type message
 
         Kwargs:
           * the keys-values to merge into a socket-compatible string
         """
-        print("tell_dict is deprecated, use tell_json instead")
+        print("tell_dict is deprecated, use tell instead")
         return False
 
     def tell_dict_type(self, *args, **kwargs):
-        """DEPRECATED, use tell_json instead
+        """DEPRECATED, use tell instead
         """
-        print("tell_dict_type is deprecated, use tell_json instead")
+        print("tell_dict_type is deprecated, use tell instead")
+        return False
+
+    def tell_json(self, *args, **kwargs):
+        """DEPRECATED, use tell instead
+        """
+        print("tell_json is deprecated, use tell instead")
         return False
 
     def tell_list(self, *args, **kwargs):
-        """DEPRECATED, use tell_json instead
+        """DEPRECATED, use tell instead
         """
-        print("tell_list is deprecated, use tell_json instead")
+        print("tell_list is deprecated, use tell instead")
         return False
 
     def tell_list_type(self, *args, **kwargs):
-        """DEPRECATED, use tell_json instead
+        """DEPRECATED, use tell instead
         """
-        print("tell_list_type is deprecated, use tell_json instead")
+        print("tell_list_type is deprecated, use tell instead")
         return False
 
     def tell_json_ext(self, *args, **kwargs):
-        """DEPRECATED, use tell_json instead
+        """DEPRECATED, use tell instead
         """
-        print("tell_json_ext is deprecated, use tell_json instead")
+        print("tell_json_ext is deprecated, use tell instead")
         return False
 
     def tell_key(self, *args, **kwargs):
-        """DEPRECATED, use tell_json instead
+        """DEPRECATED, use tell instead
         """
-        print("tell_key is deprecated, use tell_json instead")
+        print("tell_key is deprecated, use tell instead")
         return False
 
     def tell_report(self, *args, **kwargs):
-        """DEPRECATED, use tell_json instead
+        """DEPRECATED, use tell instead
         """
-        print("tell_report is deprecated, use tell_json instead")
+        print("tell_report is deprecated, use tell instead")
         return False
 
     def ping(self):
         """Pings all receivers to check their health, updates the
         receivers list and returns the result
         """
-        self._tell(txt=core._EMPTY, key=core.PINGKEY, tag=None, unpack=True)
+        self._tell(txt=core._EMPTY, key=core.PINGKEY)
         ping_res = self._ping.get()
         self._ping.task_done()
         return ping_res
@@ -242,7 +248,7 @@ class SocTransmitter(object):
     def close_receivers(self):
         """Forces all receivers to drop listening
         """
-        self._tell(txt=core._EMPTY, key=core.DIEKEY, tag=None, unpack=True)
+        self._tell(txt=core._EMPTY, key=core.DIEKEY)
         for k, v in list(self.receivers.items()):
             core.killSock(v)
             del self.receivers[k]
