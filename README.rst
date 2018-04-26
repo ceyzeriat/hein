@@ -22,7 +22,7 @@ Well, my friend, you are stuck.
 
 Actually not, because this is exactly what `hein` does: 1-Publisher to N-Subscriber ashynchronous socket communication, turn-key - check the example below.
 
-NB: ``PyDispatcher``, ``Dispatch``, ``PyPubSub``, ``smokesignal`` or other similar libraries will get you to the point where several threads can talk to each other - that is great for some applications, but threads are not processes and you will be required to share the publisher object among subscribers: this is not an option when subscribers run in separate processes, possibly on different machines. ``ZeroMQ`` will get you to the point where you can talk between processes. However, all of the asynchronous heavy logistics is left for you to implement, and the socket connections will crash when a subscriber drops (unless you cover this case in your own implementation as well). Both of these tweaks are natively covered in ``hein``: minimal effort.
+NB: ``PyDispatcher``, ``Dispatch``, ``PyPubSub``, ``smokesignal`` or other similar libraries will get you to the point where several threads can talk to each other - that is great for some applications, but threads are not processes and you will be required to share the publisher object among subscribers: this is not an option when subscribers run in separate processes, possibly on different machines. ``ZeroMQ`` will get you to the point where you can talk between processes. However, all of the asynchronous heavy logistics is left for you to implement, and the socket connections will crash when a subscriber drops (unless you cover this case in your own implementation as well). Both of these tweaks are natively covered in ``hein``: minimal effort. Also, hein requires no deamon to be run.
 
 
 Example
@@ -74,7 +74,7 @@ Only one listener is listed with the True (is connected) flag. Now let's try ano
     from datetime import datetime
     import pytz
     
-    t.tell_dict_type(string='hello', integer=34, float=13.4, d=datetime(2017, 12, 3, tzinfo=pytz.UTC))
+    t.tell_json({'string'='hello', 'integer'=34, 'float'=13.4, 'd'=datetime(2017, 12, 3, tzinfo=pytz.UTC)})
 
 The receiver will get:
 
@@ -82,9 +82,8 @@ The receiver will get:
 
     {'integer': 34, 'float': 13.4, 'string': 'hello', 'd': datetime.datetime(2017, 12, 3, 0, 0, tzinfo=<UTC>)}
 
-This in no magic, this is smart socket communication.
 
-Obviously, the behavior at connection and reception is driven my callback functions, which by default only print the listener's names or the message transmitted.
+Obviously, the behavior at connection and reception is driven by callback functions, which by default only print the listener's names or the message transmitted.
 All you will need now is write your own functions to replace these default callbacks.
 That's it.
 
