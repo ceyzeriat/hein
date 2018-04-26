@@ -74,9 +74,9 @@ Only one listener is listed with the True (is connected) flag. Now let's try ano
     from datetime import datetime
     import pytz
     
-    t.tell_json({'string'='hello', 'integer'=34, 'float'=13.4, 'd'=datetime(2017, 12, 3, tzinfo=pytz.UTC)})
+    t.tell_json({'string': 'hello', 'integer': 34, 'float': 13.4, 'd': datetime(2017, 12, 3, tzinfo=pytz.UTC)})
 
-The receiver will get:
+The receiver will get exactly the same thing:
 
 .. code-block:: python
 
@@ -104,7 +104,8 @@ Hein requires the following Python packages:
 
 * socket: Really?
 * threading, select: for threading and port-reading
-* time, os: for basic stuff
+* json: for unpacking the message
+* time, os, re: for basic stuff
 * byt: to handle chains of bytes identically no matter the python version
 * pytz: optional, for handling datetime-timezones
 
