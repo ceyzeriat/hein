@@ -376,7 +376,7 @@ def json_loads(data):
             return dict((str(k), unpack(v)) for k, v in d.items())
         else:
             return bytes2type(d)
-    data = json.loads(str(data))
+    data = json.loads(str(data), strict=False)
     return unpack(data)
 
 
