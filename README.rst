@@ -74,9 +74,9 @@ Only one listener is listed with the True (is connected) flag. Now let's try ano
     from datetime import datetime
     import pytz
     
-    t.tell_json({'string'='hello', 'integer'=34, 'float'=13.4, 'd'=datetime(2017, 12, 3, tzinfo=pytz.UTC)})
+    t.tell_json({'string': 'hello', 'integer': 34, 'float': 13.4, 'd': datetime(2017, 12, 3, tzinfo=pytz.UTC)})
 
-The receiver will get:
+The receiver will get exactly the same thing:
 
 .. code-block:: python
 
