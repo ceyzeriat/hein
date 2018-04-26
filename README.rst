@@ -104,7 +104,8 @@ Hein requires the following Python packages:
 
 * socket: Really?
 * threading, select: for threading and port-reading
-* time, os: for basic stuff
+* json: for unpacking the message
+* time, os, re: for basic stuff
 * byt: to handle chains of bytes identically no matter the python version
 * pytz: optional, for handling datetime-timezones
 
