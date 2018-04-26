@@ -157,11 +157,24 @@ class SocReceiver(object):
         core.killSock(self._soc)
         self._soc = None
 
-    def process(self, typ, data):
+    def process(self, data, tag):
         """
-        Replace this function with proper data processing
+        Replace this function with your own data processing
+
+        Args:
+          * data: the data transmitted
+          * tag: the tag given by the sender, or None
+
+        Note that 'data' will not be unpacked if the sender set the
+        unpack flag to False, else it will contain the variable sent.
+        The unpacked data can be access through data.message
+        To test if the data needs to be unpacked at all, you may test
+        the presence of 'message' property, or test the type of data
+        e.g.
+          * to_be_unpacked = hasattr(data, 'message')
+          * to_be_unpacked = isinstance(data, hein.Message)
         """
-        print("{}: {}".format(typ, data))
+        print("{}{}".format("" if tag is None else "{}: ".format(tag), data))
 
     def _newconnection(self):
         """
@@ -199,7 +212,9 @@ def tellme(self):
             break
         inBuff = res.pop(-1)  # the remainder
         for comm in res:
-            thekey = comm[:core.KEYLENGTH]
+            thekey, comm = comm[:core.KEYLENGTH], comm[core.KEYLENGTH:]
+            tag, unpack, comm = comm.split(core.DICTMAPPER, 2)
+            tag = str(tag) if len(tag) > 0 else None
             # got a die key, just terminate
             if thekey == core.DIEKEY:
                 self.close()
@@ -207,32 +222,12 @@ def tellme(self):
             elif thekey == core.PINGKEY:
                 pass
             elif thekey == core.RAWKEY:
-                self.process('raw',
-                             comm[core.KEYLENGTH:])
-            elif thekey == core.DICTKEY:
-                self.process('dic',
-                        core.split_socket_dict(False, comm[core.KEYLENGTH:]))
-            elif thekey == core.DICTKEYTYPE:
-                self.process('dic',
-                        core.split_socket_dict(True, comm[core.KEYLENGTH:]))
-            elif thekey == core.REPORTKEY:
-                self.process('rpt',
-                        core.split_socket_dict(False, comm[core.KEYLENGTH:]))
-            elif thekey == core.LISTKEY:
-                self.process('lst',
-                        core.split_socket_list(False, comm[core.KEYLENGTH:]))
-            elif thekey == core.LISTKEYTYPE:
-                self.process('lst',
-                        core.split_socket_list(True, comm[core.KEYLENGTH:]))
+                self.process(data=comm, tag=tag)
             elif thekey == core.JSONKEY:
-                self.process('jsn', json.loads(str(comm[core.KEYLENGTH:])))
-            elif thekey == core.JSONXKEY:
-                self.process('jxn', core.jsonX_loads(comm[core.KEYLENGTH:]))
-            else:
-                self.process(
-                        str(thekey[len(core.KEYPADDING):
-                                   len(core.KEYPADDING)+core.TINYKEYLENGTH]),
-                        core.split_socket_dict(False, comm[core.KEYLENGTH:]))
+                if int(unpack) == 1:
+                    self.process(data=core.json_loads(comm), tag=tag)
+                else:
+                    self.process(data=core.Message(comm), tag=tag)
     self._running = False
 
 

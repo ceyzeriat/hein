@@ -53,9 +53,10 @@ class SocTransmitter(object):
           * start (bool): whether to start the broadcasting at
             initialization or not. If not, use ``start`` method
           * portname (str[15]): the name of the communicating port, for
-            identification purposes
-          * timeoutACK (float): the timeout duration in seconds to wait for
-            the acknowledgement receipt, or ``None`` to disable it
+            display purposes only
+          * timeoutACK (float or None): the timeout duration in seconds
+            to wait for the acknowledgement receipt, or ``None`` to
+            disable it
         """
         self._running = False
         self.timeoutACK = None if timeoutACK is None else float(timeoutACK)
@@ -70,9 +71,11 @@ class SocTransmitter(object):
             self.start()
 
     def __str__(self):
-        return "Socket transmitter on port {:d} ({})".format(
-            self.port,
-            'on' if self.running else 'off')
+        return "Socket transmitter on port {:d} name '{}' ({})"\
+            .format(
+                self.port,
+                self.portname,
+                'on' if self.running else 'off')
 
     __repr__ = __str__
     
@@ -113,7 +116,7 @@ class SocTransmitter(object):
         if self.timeoutACK is None:
             if ping:
                 # requested a ping, so give a bool anyway
-                return core.getAR(self.receivers[name], timeout=1.)
+                return core.getAR(self.receivers[name])
             else:
                 return None
         elif not core.getAR(self.receivers[name], timeout=self.timeoutACK):
@@ -131,85 +134,40 @@ class SocTransmitter(object):
         del self.receivers[name]
         return False
 
-    def _tell(self, txt, key):
+    def _tell(self, txt, key, tag, unpack):
         """Does the real preparation and sending of the message
         """
         if not self.running:
             return False
-        self.sending_buffer.append((key + core.package_message(txt),
+        tag = core._EMPTY if tag is None\
+            else Byt(core.clean_name(str(tag)[:core.TAGLEN]))
+        extra = tag + core.DICTMAPPER\
+                + (core._ONE if unpack else core._ZERO) + core.DICTMAPPER
+        self.sending_buffer.append((key + extra + core.package_message(txt),
                                     key == core.PINGKEY))
         return True
 
-    def tell_raw(self, txt):
+    def tell_raw(self, txt, tag=None):
         """Broadcasts a raw message
 
         Args:
           * txt (Byt or str): the message
+          * tag (str[15] or None): a key to indicate the kind of
+            message transmitted
         """
+        if not isinstance(txt, core.STRINGTYPES):
+            return False
         if not len(txt) > 0:
             return False
-        return self._tell(
-                    core.base_type2bytes(txt, keep_typ=False, jsonX=False),
-                    core.RAWKEY)
+        txt = core.base_type2bytes(txt, keep_typ=False, json=False)
+        return self._tell(txt=txt, key=core.RAWKEY, tag=tag, unpack=False)
 
-    def tell_dict(self, **kwargs):
-        """Broadcasts a dictionary-type message
-
-        Kwargs:
-          * the keys-values to merge into a socket-compatible string
-        """
-        if not len(kwargs) > 0:
-            return False
-        return self._tell(core.merge_socket_dict(False, kwargs),
-                          core.DICTKEY)
-
-    def tell_dict_type(self, **kwargs):
-        """Broadcasts a dictionary-type message, and conserves the types
-
-        Kwargs:
-          * the keys-values to merge into a socket-compatible string
-        """
-        if not len(kwargs) > 0:
-            return False
-        return self._tell(core.merge_socket_dict(True, kwargs),
-                          core.DICTKEYTYPE)
-
-    def tell_list(self, *args):
-        """Broadcasts a list-type message
-
-        Args:
-          * the values to merge into a socket-compatible string
-        """
-        if not len(args) > 0:
-            return False
-        return self._tell(core.merge_socket_list(False, args),
-                          core.LISTKEY)
-
-    def tell_list_type(self, *args):
-        """Broadcasts a list-type message, and conserves the types
-
-        Args:
-          * the values to merge into a socket-compatible string
-        """
-        if not len(args) > 0:
-            return False
-        return self._tell(core.merge_socket_list(True, args),
-                          core.LISTKEYTYPE)
-
-    def tell_json(self, v):
-        """Broadcasts a json-compatible variable
-    
-        Args:
-          * v (json serialize-able): variable to convert to json-string
-        """
-        v = json.dumps(v)
-        return self._tell(Byt(v), core.JSONKEY)
-
-    def tell_json_ext(self, v):
+    def tell_json(self, v, tag=None, unpack=True):
         """Broadcasts an extended-json variable, cross-compatible
         between python 2 and 3
 
         Supported types:
+          * structure: list, dict
           * numerical: int, float
           * base: bool, None
           * time: datetime, date, time (with timezones if pytz is
@@ -217,44 +175,66 @@ class SocTransmitter(object):
           * string: Byt, unicode, str, bytes
     
         Args:
-          * v: variable to convert to an extended-json-string
+          * v: the variable to send
+          * tag (str[15] or None): a key to indicate the kind of
+            message transmitted
+          * unpack (bool): whether the message will be automatically
+            decoded upon reception
         """
-        v = core.jsonX_dumps(v)
-        return self._tell(v, core.JSONXKEY)
+        v = core.json_dumps(v)
+        return self._tell(txt=v, key=core.JSONKEY, tag=tag, unpack=unpack)
+
+    def tell_dict(self, *args, **kwargs):
+        """DEPRECATED, use tell_json instead
+        Broadcasts a dictionary-type message
+
+        Kwargs:
+          * the keys-values to merge into a socket-compatible string
+        """
+        print("tell_dict is deprecated, use tell_json instead")
+        return False
+
+    def tell_dict_type(self, *args, **kwargs):
+        """DEPRECATED, use tell_json instead
+        """
+        print("tell_dict_type is deprecated, use tell_json instead")
+        return False
+
+    def tell_list(self, *args, **kwargs):
+        """DEPRECATED, use tell_json instead
+        """
+        print("tell_list is deprecated, use tell_json instead")
+        return False
+
+    def tell_list_type(self, *args, **kwargs):
+        """DEPRECATED, use tell_json instead
+        """
+        print("tell_list_type is deprecated, use tell_json instead")
+        return False
+
+    def tell_json_ext(self, *args, **kwargs):
+        """DEPRECATED, use tell_json instead
+        """
+        print("tell_json_ext is deprecated, use tell_json instead")
+        return False
 
     def tell_key(self, *args, **kwargs):
-        """Broadcasts a dictionary-type message using the key provided
-
-        Args:
-          * key (str[3]): the key, of size 3
-
-        Kwargs:
-          * the keys-values to merge into a socket-compatible string
+        """DEPRECATED, use tell_json instead
         """
-        if len(args) == 0:
-            return False
-        key = Byt(args[0])[:core.TINYKEYLENGTH]
-        if not len(kwargs) > 0 or len(key) != core.TINYKEYLENGTH:
-            return False
-        return self._tell(core.merge_socket_dict(False, kwargs),
-                          core.KEYPADDING + key + core.KEYPADDING)
+        print("tell_key is deprecated, use tell_json instead")
+        return False
 
-    def tell_report(self, **kwargs):
-        """Broadcasts a dictionary-type message
-
-        Kwargs:
-          * the keys-values to merge into a socket-compatible string
+    def tell_report(self, *args, **kwargs):
+        """DEPRECATED, use tell_json instead
         """
-        if not len(kwargs) > 0:
-            return False
-        return self._tell(core.merge_socket_dict(False, kwargs),
-                          core.REPORTKEY)
+        print("tell_report is deprecated, use tell_json instead")
+        return False
 
     def ping(self):
         """Pings all receivers to check their health, updates the
         receivers list and returns the result
         """
-        self._tell(Byt(), core.PINGKEY)
+        self._tell(txt=core._EMPTY, key=core.PINGKEY, tag=None, unpack=True)
         ping_res = self._ping.get()
         self._ping.task_done()
         return ping_res
@@ -262,7 +242,7 @@ class SocTransmitter(object):
     def close_receivers(self):
         """Forces all receivers to drop listening
         """
-        self._tell('', core.DIEKEY)
+        self._tell(txt=core._EMPTY, key=core.DIEKEY, tag=None, unpack=True)
         for k, v in list(self.receivers.items()):
             core.killSock(v)
             del self.receivers[k]

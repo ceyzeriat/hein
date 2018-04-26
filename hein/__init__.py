@@ -30,9 +30,10 @@ _PATH = os.path.dirname(os.path.abspath(__file__))
 _PATH = _PATH.split(os.path.sep)[:-1]
 
 try:
+    _f = os.path.join(os.path.sep, os.path.sep.join(_PATH), 'README.rst')
     __doc__ = """
               {0}
-              """.format(open(os.path.join(os.path.sep, os.path.sep.join(_PATH), 'README.rst'), 'r').read())
+              """.format(open(_f, mode='r').read())
 except:
     __doc__ = ""
 
@@ -40,3 +41,4 @@ except:
 from .soctransmitter import *
 from .socreceiver import *
 from ._version import __version__, __major__, __minor__, __micro__
+from .core import *

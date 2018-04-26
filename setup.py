@@ -52,4 +52,3 @@ setup(
         "Topic :: Documentation :: Sphinx",
     ],
 )
-

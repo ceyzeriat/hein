@@ -32,6 +32,7 @@ from datetime import datetime
 from datetime import date
 from datetime import time
 import json
+import re
 TZON = True
 try:
     import pytz
@@ -43,6 +44,9 @@ except:
     unicode = str
 
 
+__all__ = ['Message']
+
+
 # acknowledgement character
 ACK = Byt('\x06')
 
@@ -52,21 +56,16 @@ ENCODING = "utf-8"
 
 # escape character
 ESCAPE = Byt('\xee')
-# split character for dictionaries between items
-DICTSEPARATOR = Byt('\xac\xbd')
-DDICTSEPARATOR = DICTSEPARATOR*2
-ESCAPEDDICTSEPARATOR = DICTSEPARATOR + ESCAPE
 # split character between key and value of a dictionary item
 # must a character that cannot be in a dict key
 DICTMAPPER = Byt(':')
-# split character between elements of a list
-LISTSEPARATOR = Byt('\xac\xbd')
-DLISTSEPARATOR = LISTSEPARATOR*2
-ESCAPEDLISTSEPARATOR = LISTSEPARATOR + ESCAPE
 # end character of a communication
 MESSAGEEND = Byt('\xac\x96')
 DMESSAGEEND = MESSAGEEND*2
 ESCAPEDMESSAGEEND = MESSAGEEND + ESCAPE
+
+# maximum tag length
+TAGLEN = 15
 
 # length of pre-pending keys - all must have the same length
 KEYPADDING = Byt('__')
@@ -76,14 +75,12 @@ KEYLENGTH = TINYKEYLENGTH + 2*len(KEYPADDING)
 DIEKEY = KEYPADDING + Byt('die') + KEYPADDING
 # send this to ping and test the health of a receiver
 PINGKEY = KEYPADDING + Byt('png') + KEYPADDING
-# send this followed with a report-type message
-REPORTKEY = KEYPADDING + Byt('rpt') + KEYPADDING
 # send this followed with a raw-type message
 RAWKEY = KEYPADDING + Byt('raw') + KEYPADDING
-# send this with a dictionary-type message
-DICTKEY = KEYPADDING + Byt('dic') + KEYPADDING
-# send this with a dictionary-type message conserving types
-DICTKEYTYPE = KEYPADDING + Byt('tdi') + KEYPADDING
+# send this with a JSON-type message
+JSONKEY = KEYPADDING + Byt('jsn') + KEYPADDING
+
+# tags for type conservation
 BOOLCODE = Byt("b")
 INTCODE = Byt("i")
 FLOATCODE = Byt("f")
@@ -95,12 +92,6 @@ DATECODE = Byt("D")
 TIMECODE = Byt("T")
 UNICODE = Byt("u")
 STRCODE = Byt("s")
-# send this with a JSON-type message
-JSONKEY = KEYPADDING + Byt('jsn') + KEYPADDING
-JSONXKEY = KEYPADDING + Byt('jxn') + KEYPADDING
-# send this with a list-type message
-LISTKEY = KEYPADDING + Byt('lst') + KEYPADDING
-LISTKEYTYPE = KEYPADDING + Byt('tls') + KEYPADDING
 
 _EMPTY = Byt("")
 _SPACE = Byt(" ")
@@ -120,6 +111,10 @@ _BRACKETR = Byt(']')
 # sending frequency in Hz
 SENDBUFFERFREQ = 100
 
+ALLOWCHAR = re.compile('[^a-zA-Z\.\-_0-9 ]')
+
+STRINGTYPES = (unicode, Byt, str, bytes)
+
 
 def receive(sock, l=16, timeout=1.):
     """
@@ -128,7 +123,7 @@ def receive(sock, l=16, timeout=1.):
     Args:
       * sock (socket): the sock to listen to
       * l (int): the length of the message to read
-      * timeout (float): the timetout
+      * timeout (float): the timetout in second
     """
     ready = select.select([sock], [], [], timeout)
     if ready[0]:
@@ -141,7 +136,7 @@ def receive(sock, l=16, timeout=1.):
         return None
 
 
-def getAR(sock, timeout=1):
+def getAR(sock, timeout=1.):
     """
     Checks for the acknowledgement on a socket
 
@@ -173,7 +168,13 @@ def esc_quote(v):
     return v.replace(_QUOTE, _ESCQUOTE)
 
 
-def extended_type2bytes(v, keep_typ, jsonX=False):
+def clean_name(txt):
+    """Returns a cleaned up name
+    """
+    return ALLOWCHAR.sub('', txt)
+
+
+def extended_type2bytes(v, keep_typ, json=False):
     """Returns a bytes representation of v
 
     Args:
@@ -209,10 +210,10 @@ def extended_type2bytes(v, keep_typ, jsonX=False):
             return TIMECODE + DICTMAPPER + data
         return data
     else:
-        return base_type2bytes(v, keep_typ, jsonX)
+        return base_type2bytes(v, keep_typ, json)
 
 
-def base_type2bytes(v, keep_typ, jsonX=False):
+def base_type2bytes(v, keep_typ, json=False):
     """Returns a bytes representation of v
 
     Args:
@@ -226,7 +227,7 @@ def base_type2bytes(v, keep_typ, jsonX=False):
       * Any other type will undergo a repr() call
     """
     if isinstance(v, Byt):
-        if jsonX:
+        if json:
             v = esc_quote(v)
         if keep_typ:
             return BYTCODE + DICTMAPPER + v
@@ -251,7 +252,7 @@ def base_type2bytes(v, keep_typ, jsonX=False):
     # catches python3 str and python2 unicode
     elif isinstance(v, unicode):
         data = Byt(v.encode(ENCODING))
-        if jsonX:
+        if json:
             data = esc_quote(data)
         if keep_typ:
             return UNICODE + DICTMAPPER + data
@@ -259,7 +260,7 @@ def base_type2bytes(v, keep_typ, jsonX=False):
     # only python2 str reach here
     elif isinstance(v, str):
         data = Byt(v)
-        if jsonX:
+        if json:
             data = esc_quote(data)
         if keep_typ:
             return STRCODE + DICTMAPPER + data
@@ -267,7 +268,7 @@ def base_type2bytes(v, keep_typ, jsonX=False):
     # only python3 bytes here
     elif isinstance(v, bytes):
         data = Byt(v)
-        if jsonX:
+        if json:
             data = esc_quote(data)
         if keep_typ:
             return BYTESCODE + DICTMAPPER + data
@@ -282,7 +283,7 @@ def base_type2bytes(v, keep_typ, jsonX=False):
         else:
             code = STRCODE
         data = Byt(data)
-        if jsonX:
+        if json:
             data = esc_quote(data)
         if keep_typ:
             return code + DICTMAPPER + data
@@ -362,7 +363,7 @@ def split_flow(data, n=-1):
             + res[-1:]
 
 
-def jsonX_loads(data):
+def json_loads(data):
     """Loads an extended json string
 
     Args:
@@ -372,14 +373,14 @@ def jsonX_loads(data):
         if isinstance(d, (list, tuple)):
             return [unpack(item) for item in d]
         elif isinstance(d, dict):
-            return dict([(str(k), unpack(v)) for k, v in d.items()])
+            return dict((str(k), unpack(v)) for k, v in d.items())
         else:
             return bytes2type(d)
     data = json.loads(str(data))
     return unpack(data)
 
 
-def jsonX_dumps(data):
+def json_dumps(data):
     """Dumps an extended json variable
 
     Args:
@@ -387,89 +388,49 @@ def jsonX_dumps(data):
     """
     if isinstance(data, (list, tuple)):
         ret = _BRACKETL
-        ret += _COMMA.join([jsonX_dumps(item) for item in data])
+        ret += _COMMA.join([json_dumps(item) for item in data])
         ret += _BRACKETR
         return ret
     elif isinstance(data, dict):
         ret = _CURLYL
-        ret += _COMMA.join([_QUOTE + Byt(k) + _QUOTECOLON + jsonX_dumps(v)\
+        ret += _COMMA.join([_QUOTE + Byt(k) + _QUOTECOLON + json_dumps(v)\
                                 for k, v in data.items()])
         ret += _CURLYR
         return ret
     else:
         return _QUOTE\
-            + esc_quote(extended_type2bytes(data, keep_typ=True, jsonX=True))\
+            + esc_quote(extended_type2bytes(data, keep_typ=True, json=True))\
             + _QUOTE
 
 
-def merge_socket_dict(keep_typ, dico):
-    """
-    Merges the data using the socket separator and returns a string
+class Message(object):
+    def __init__(self, v):
+        self._raw = v
+        self._message = None
 
-    Args:
-      * keep_typ: bool, whether to keep track of the types of values
-      * dico (dict): the keys-values to merge into a socket-compatible string
-    """
-    ret = Byt()
-    for k, v in dico.items():
-        abit = Byt(k) + DICTMAPPER + extended_type2bytes(v, keep_typ)
-        ret += abit.replace(DICTSEPARATOR, ESCAPEDDICTSEPARATOR)
-        ret += DDICTSEPARATOR
-    return ret
+    def __repr__(self):
+        return str(self.message)
 
+    __str__ = __repr__
 
-def split_socket_dict(keep_typ, data):
-    """
-    Splits the data using the dictionary separator and returns a
-    dictionary
+    @property
+    def raw(self):
+        """The raw message
+        """
+        return self._raw
 
-    Args:
-      * keep_typ (bool): whether to retrieve the type from the data
-      * data (Byt): the data to split
-    """
-    dic = {}
-    for item in data.split(DDICTSEPARATOR):
-        if len(item) == 0:
-            continue
-        k, v = item.replace(ESCAPEDDICTSEPARATOR, DICTSEPARATOR)\
-                   .split(DICTMAPPER, 1)
-        if keep_typ:
-            v = bytes2type(v)
-        dic[str(k)] = v
-    return dic
+    @raw.setter
+    def raw(self, value):
+        return
 
+    @property
+    def message(self):
+        """Unpack the message
+        """
+        if self._message is None:
+            self._message = json_loads(self.raw)
+        return self._message
 
-def merge_socket_list(keep_typ, lst):
-    """
-    Merges the data using the socket separator and returns a string
-
-    Args:
-      * keep_typ (bool): whether to retrieve the type from the data
-      * the values to merge into a socket-compatible string
-    """
-    ret = Byt()
-    for v in lst:
-        v = extended_type2bytes(v, keep_typ)
-        ret += v.replace(LISTSEPARATOR, ESCAPEDLISTSEPARATOR)
-        ret += DLISTSEPARATOR
-    return ret
-
-
-def split_socket_list(keep_typ, data):
-    """
-    Splits the data using the list separator and returns a
-    list
-
-    Args:
-      * keep_typ (bool): whether to retrieve the type from the data
-      * data (Byt): the data to split
-    """
-    ret = []
-    for item in data.split(DLISTSEPARATOR):
-        if len(item) == 0:
-            continue
-        item = item.replace(ESCAPEDLISTSEPARATOR, LISTSEPARATOR)
-        if keep_typ:
-            item = bytes2type(item)
-        ret.append(item)
-    return ret
+    @message.setter
+    def message(self, value):
+        return
