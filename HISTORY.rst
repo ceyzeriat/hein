@@ -1,8 +1,9 @@
-0.2.2 (2018-04-27)
+0.2.3 (2018-04-27)
 +++++++++++++++++++
 
 - Renamed tell_json to tell
 - Fixed strict=False in json.loads to accept all bytes
+- Fixed support for python2, specifically json.loads rejecting bytes
 
 
 0.2.0 (2018-04-26)

@@ -33,6 +33,7 @@ from datetime import date
 from datetime import time
 import json
 import re
+import sys
 TZON = True
 try:
     import pytz
@@ -114,6 +115,8 @@ SENDBUFFERFREQ = 100
 ALLOWCHAR = re.compile('[^a-zA-Z\.\-_0-9 ]')
 
 STRINGTYPES = (unicode, Byt, str, bytes)
+
+PYTHON3 = sys.version_info > (3,)
 
 
 def receive(sock, l=16, timeout=1.):
@@ -376,8 +379,10 @@ def json_loads(data):
             return dict((str(k), unpack(v)) for k, v in d.items())
         else:
             return bytes2type(d)
-    data = json.loads(str(data), strict=False)
-    return unpack(data)
+    if PYTHON3:
+        return unpack(json.loads(str(data), strict=False))
+    else:
+        return json.loads(str(data), cls=NoUTFUnpacker)
 
 
 def json_dumps(data):
@@ -434,3 +439,37 @@ class Message(object):
     @message.setter
     def message(self, value):
         return
+
+
+class NoUTFUnpacker(json.JSONDecoder):
+    MATCH = re.compile('x([0-9a-fA-F]{2,2})')
+
+    XHEX = dict(
+        (chr(l), chr(l) if 31 < l < 128 else 'x{:0>2}'.format(hex(l)[2:]))\
+            for l in range(256))
+
+    REV_XHEX = dict((v, k) for k, v in XHEX.items())
+
+    def __init__(self, *args, **kwargs):
+        json.JSONDecoder.__init__(self, object_hook=self.object_hook,
+            *args, **kwargs)
+
+    def object_hook(self, obj):
+        def unpack(d):
+            if isinstance(d, (list, tuple)):
+                return [unpack(item) for item in obj]
+            elif isinstance(d, dict):
+                return dict((str(k), unpack(v)) for k, v in d.items())
+            else:
+                d = self.MATCH.sub(
+                        lambda x: self.REV_XHEX[x.group()],
+                        str(d))
+                d = d.replace('x/', 'x')
+                return bytes2type(d)
+        return unpack(obj)
+
+    def raw_decode(self, s, idx=0):
+        s = s.replace('x', 'x/')
+        s = ''.join([self.XHEX[l] for l in s])
+        s = json.JSONDecoder.raw_decode(self, s=s, idx=idx)
+        return s
